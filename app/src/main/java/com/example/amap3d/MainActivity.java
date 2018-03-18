@@ -15,6 +15,8 @@ import android.widget.Toast;
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.MapView;
+import com.amap.api.maps.UiSettings;
+import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.LatLngBounds;
 import com.amap.api.maps.model.Marker;
@@ -22,6 +24,10 @@ import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.amap.api.maps.utils.SpatialRelationUtil;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
+import com.example.amap3d.Gsons.AccountGson;
+import com.example.amap3d.Gsons.BusDataGson;
+import com.example.amap3d.Gsons.BusMoveGson;
+import com.example.amap3d.Gsons.BusPositionGson;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -35,7 +41,6 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -65,13 +70,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         init();
         setAMap();
         setLocationStyle();
-        getBusData();
-//        requestData("http://111.231.201.179/android/bus", "getBusData");
-        linkMQTT();
-    }
-
-    private void getBusPosition() {
-        new Thread(busPosition).start();
+        initData();
     }
 
     private void setLocationStyle() {
@@ -81,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         myLocationStyle.showMyLocation(true);
         myLocationStyle.radiusFillColor(Color.parseColor("#00000000"));
         myLocationStyle.strokeColor(Color.parseColor("#00000000"));
-//        myLocationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_openmap_mark));//设置蓝点图标
+        myLocationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.me));//设置蓝点图标
         aMap.setMyLocationStyle(myLocationStyle);
         aMap.getUiSettings().setMyLocationButtonEnabled(true);
         aMap.setMyLocationEnabled(true);
@@ -104,35 +103,146 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mqttOptions.setKeepAliveInterval(120);
     }
 
-    private void addPoints() {
+    private void initPoints() {
+        if(busPositionList==null){
+            toast("数据异常");
+            return;
+        }
         for(BusPositionGson busPosition:busPositionList){
             String key = busPosition.getGPSDeviceIMEI();
-            LatLng val = new LatLng(Double.parseDouble(busPosition.getLat()),Double.parseDouble(busPosition.getLng()));
-            markerMap.put(key,aMap.addMarker(new MarkerOptions().position(val).title(busDataMap.get(key)[0]).snippet(busDataMap.get(key)[1])));
+            LatLng latLng = new LatLng(Double.parseDouble(busPosition.getLat()),Double.parseDouble(busPosition.getLng()));
+            Marker marker=aMap.addMarker(new MarkerOptions().position(latLng).title(busDataMap.get(key)[0]).snippet(busDataMap.get(key)[1]));
+            marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus1));
+            markerMap.put(key,marker);
         }
     }
+
+//    List<BitmapDescriptor> icon;
 
     AMap.OnMarkerClickListener markerClickListener = new AMap.OnMarkerClickListener() {
         @Override
         public boolean onMarkerClick(Marker marker) {
+//            if(icon==null){
+//                icon=marker.getIcons();
+//            }
             if (marker.isInfoWindowShown()) {
                 marker.hideInfoWindow();
+//                marker.setIcon(icon);
             } else {
                 marker.showInfoWindow();
+//                marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_openmap_mark));
             }
             return true;
         }
     };
 
-    private void getBusData(/*String responseData*/) {
-        new Thread(busData).start();
-//        busDataList = gson.fromJson(responseData, new TypeToken<List<BusDataGson>>() {
-//        }.getType());
-//        toast(busDataList.get(3).getGPSDeviceIMEI());
+    private void initData(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                initBusData();
+                initBusPosition();
+                initPoints();
+                initMQTT();
+            }
+        }).start();
+    }
+
+    private void initBusData(){
+        try {
+            Request request = new Request.Builder()
+                    .url("http://111.231.201.179/android/bus")
+                    .build();
+            Response response = client.newCall(request).execute();
+            String responseData = response.body().string();
+            String responseCode = String.valueOf(response.code());
+            if (responseData != null && responseCode.charAt(0) == '2') {
+                try {
+                    Log.e("busDataRunnable", responseData);
+                    List<BusDataGson> busDatas = gson.fromJson(responseData, new TypeToken<List<BusDataGson>>() {
+                    }.getType());
+                    for (BusDataGson busData : busDatas) {
+                        String key = busData.getGPSDeviceIMEI();
+                        String title = busData.getBus_lineName() + "\n" + busData.getBus_departureSite();
+                        String snippet = busData.getBus_arriveSite();
+                        busDataMap.put(key, new String[]{title, snippet});
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    toast("数据异常");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            toast("数据获取失败");
+        }
+    }
+
+    private void initBusPosition(){
+        try {
+            Request request = new Request.Builder()
+                    .url("http://111.231.201.179/android/bus/location")
+                    .build();
+            Response response = client.newCall(request).execute();
+            String responseData = response.body().string();
+            String responseCode = String.valueOf(response.code());
+            if (responseData != null && responseCode.charAt(0) == '2') {
+                try {
+                    Log.e("busPositionRunnable", responseData);
+                    busPositionList = gson.fromJson(responseData, new TypeToken<List<BusPositionGson>>() {
+                    }.getType());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    toast("数据异常");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            toast("数据获取失败");
+        }
+    }
+
+    private void initMQTT(){
+        try {
+            Request request = new Request.Builder()
+                    .url("http://111.231.201.179/bus/mqtt")
+                    .build();
+            Response response = client.newCall(request).execute();
+            String responseData = response.body().string();
+            String responseCode = String.valueOf(response.code());
+            if (responseData != null && responseCode.charAt(0) == '2') {
+                try {
+                    Log.e("mqttRunnable", responseData);
+                    AccountGson account = gson.fromJson(responseData, AccountGson.class);
+                    String username = account.getUsername();
+                    String password = account.getPassword();
+                    TelephonyManager tm = (TelephonyManager) getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+                    @SuppressLint("MissingPermission") String ssn = tm.getSimSerialNumber();
+
+                    mqttOptions.setUserName(username);
+                    mqttOptions.setPassword(password.toCharArray());
+                    mqttClient = new MqttClient("tcp://111.231.201.179:1880", ssn, new MemoryPersistence());
+                    if (mqttClient.isConnected()) {
+                        toast("服务器已连接");
+                    } else {
+                        mqttClient.setCallback(mqttCallback);
+                        mqttClient.connect(mqttOptions);
+                        subscribeMsg("BusMoveList", 0);
+                        if (!mqttClient.isConnected())
+                            throw new Exception("throw");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    toast("连接服务器失败");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void subscribeMsg(String topic, int qos) {
-        if (client != null) {
+        if (mqttClient != null) {
             int[] Qos = {qos};
             String[] topic1 = {topic};
             try {
@@ -142,68 +252,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
     }
-
-    private Runnable busPosition = new Runnable() {
-        @Override
-        public void run() {
-            try {
-                Request request = new Request.Builder()
-                        .url("http://111.231.201.179/android/bus/location")
-                        .build();
-                Response response = client.newCall(request).execute();
-                String responseData = response.body().string();
-                String responseCode = String.valueOf(response.code());
-                if (responseData != null && responseCode.charAt(0) == '2') {
-                    try {
-                        Log.e("busPositionRunnable", responseData);
-                        busPositionList = gson.fromJson(responseData, new TypeToken<List<BusPositionGson>>() {
-                        }.getType());
-                        addPoints();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        toast("数据异常");
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                toast("数据获取失败");
-            }
-        }
-    };
-
-    private Runnable busData = new Runnable() {
-        @Override
-        public void run() {
-            try {
-                Request request = new Request.Builder()
-                        .url("http://111.231.201.179/android/bus")
-                        .build();
-                Response response = client.newCall(request).execute();
-                String responseData = response.body().string();
-                String responseCode = String.valueOf(response.code());
-                if (responseData != null && responseCode.charAt(0) == '2') {
-                    try {
-                        Log.e("busDataRunnable", responseData);
-                        List<BusDataGson> busDatas = gson.fromJson(responseData, new TypeToken<List<BusDataGson>>() {
-                        }.getType());
-                        for (BusDataGson busData : busDatas) {
-                            String key = busData.getGPSDeviceIMEI();
-                            String title = busData.getBus_lineName() + "\n" + busData.getBus_departureSite();
-                            String snippet = busData.getBus_arriveSite();
-                            busDataMap.put(key, new String[]{title, snippet});
-                            getBusPosition();
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        toast("数据异常");
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                toast("数据获取失败");
-            }
-        }
-    };
 
     private void translate() {
         // 获取轨迹坐标点
@@ -243,7 +291,73 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
         aMap.setOnMarkerClickListener(markerClickListener);
+
+        UiSettings mUiSettings;
+        mUiSettings = aMap.getUiSettings();
+        mUiSettings.setRotateGesturesEnabled(false);
+        mUiSettings.setTiltGesturesEnabled(false);
     }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.refresh:
+                refresh();
+                break;
+        }
+    }
+
+    private void refresh() {
+        busDataMap.clear();
+        busPositionList.clear();
+        markerMap.clear();
+        initData();
+    }
+
+    private void disconnect() {
+        if (mqttClient != null && mqttClient.isConnected()) {
+            try {
+                mqttClient.disconnect();
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    MqttCallback mqttCallback = new MqttCallback() {
+        @Override
+        public void connectionLost(Throwable cause) {
+
+        }
+
+        @Override
+        public void messageArrived(String topic, MqttMessage message) throws Exception {
+            toast(topic);
+            Log.e("mqttmessage", message.toString());
+            try {
+                List<BusMoveGson> busMoveGsons=gson.fromJson(message.toString(), new TypeToken<List<BusMoveGson>>() {
+                }.getType());
+                for(BusMoveGson busMoveGson:busMoveGsons){
+                    String key=busMoveGson.getGPSDeviceIMEI();
+                    markerMap.get(key).remove();
+                    markerMap.remove(key);
+                    Marker marker=aMap.addMarker(new MarkerOptions()
+                            .position(new LatLng(busMoveGson.getLat(),busMoveGson.getLng()))
+                            .title(busDataMap.get(key)[0])
+                            .snippet(busDataMap.get(key)[1]));
+                    marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus1));
+                    markerMap.put(key,marker);
+                }
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void deliveryComplete(IMqttDeliveryToken token) {
+
+        }
+    };
 
     private void toast(final String text) {
         try {
@@ -257,7 +371,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             e.printStackTrace();
         }
     }
-
 
     @Override
     protected void onResume() {
@@ -283,40 +396,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mapView.onDestroy();
     }
 
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.refresh:
-                refresh();
-                break;
-        }
-    }
+    /*private void getBusPosition() {
+        new Thread(busPosition).start();
+    }*/
 
-
-    private void refresh() {
-        busDataMap.clear();
-        busPositionList.clear();
-        getBusData();
-        disconnect();
-        linkMQTT();
-    }
-
-    private void disconnect() {
-        if (mqttClient != null && mqttClient.isConnected()) {
-            try {
-                mqttClient.disconnect();
-            } catch (MqttException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    /* MQTT */
-    private void linkMQTT() {
-        new Thread(mqtt).start();
-    }
-
-    private Runnable mqtt = new Runnable() {
+    /*private Runnable mqtt = new Runnable() {
         @Override
         public void run() {
             try {
@@ -356,96 +440,75 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 e.printStackTrace();
             }
         }
-    };
+    };*/
 
-    MqttCallback mqttCallback = new MqttCallback() {
-        @Override
-        public void connectionLost(Throwable cause) {
-
-        }
-
-        @Override
-        public void messageArrived(String topic, MqttMessage message) throws Exception {
-            toast(topic);
-            Log.e("mqttmessage", message.toString());
-            try {
-                List<BusMoveGson> busMoveGsons=gson.fromJson(message.toString(), new TypeToken<List<BusMoveGson>>() {
-                }.getType());
-                for(BusMoveGson busMoveGson:busMoveGsons){
-                    String key=busMoveGson.getGPSDeviceIMEI();
-                    markerMap.get(key).remove();
-                    markerMap.remove(key);
-                    markerMap.put(key,aMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(busMoveGson.getLat(),busMoveGson.getLng()))
-                            .title(busDataMap.get(key)[0])
-                            .snippet(busDataMap.get(key)[1])));
-
-                }
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void deliveryComplete(IMqttDeliveryToken token) {
-//            toast("deliveryComplete");
-        }
-    };
-
-    /*private void requestData(String url, String method) {
-        RequestRunnable runnable = new RequestRunnable();
-        runnable.setUrl(url);
-        runnable.setMethod(method);
-        new Thread(runnable).start();
+    /*private void linkMQTT() {
+        new Thread(mqtt).start();
     }*/
 
-    /*private class RequestRunnable implements Runnable {
-        private String url = "";
-        private String method = "";
-
-        public void setUrl(String url) {
-            this.url = url;
-        }
-
-        public void setMethod(String method) {
-            this.method = method;
-        }
-
+    /*private Runnable busData = new Runnable() {
         @Override
         public void run() {
             try {
                 Request request = new Request.Builder()
-                        .url(url)
+                        .url("http://111.231.201.179/android/bus")
                         .build();
                 Response response = client.newCall(request).execute();
                 String responseData = response.body().string();
                 String responseCode = String.valueOf(response.code());
                 if (responseData != null && responseCode.charAt(0) == '2') {
                     try {
-                        Method m=MainActivity.class.getDeclaredMethod(method, new Class[]{String.class});
-                        m.setAccessible(true);
-                        m.invoke(MainActivity.class.newInstance(), new String[]{responseData});
+                        Log.e("busDataRunnable", responseData);
+                        List<BusDataGson> busDatas = gson.fromJson(responseData, new TypeToken<List<BusDataGson>>() {
+                        }.getType());
+                        for (BusDataGson busData : busDatas) {
+                            String key = busData.getGPSDeviceIMEI();
+                            String title = busData.getBus_lineName() + "\n" + busData.getBus_departureSite();
+                            String snippet = busData.getBus_arriveSite();
+                            busDataMap.put(key, new String[]{title, snippet});
+                            getBusPosition();
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
-                        toast("数据解析错误");
-                        Log.e("ERROR", e.getMessage());
+                        toast("数据异常");
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                toast("网络异常");
+                toast("数据获取失败");
             }
         }
+    };*/
+
+    /*private void getBusData() {
+        new Thread(busData).start();
     }*/
 
-    /*public void publish(String msg){
-        String topic = "BusMoveList";
-        Integer qos = 0;
-        Boolean retained = false;
-        try {
-            mqttClient.publish(topic, msg.getBytes(), qos.intValue(), retained.booleanValue());
-        } catch (MqttException e) {
-            e.printStackTrace();
+    /*private Runnable busPosition = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                Request request = new Request.Builder()
+                        .url("http://111.231.201.179/android/bus/location")
+                        .build();
+                Response response = client.newCall(request).execute();
+                String responseData = response.body().string();
+                String responseCode = String.valueOf(response.code());
+                if (responseData != null && responseCode.charAt(0) == '2') {
+                    try {
+                        Log.e("busPositionRunnable", responseData);
+                        busPositionList = gson.fromJson(responseData, new TypeToken<List<BusPositionGson>>() {
+                        }.getType());
+                        addPoints();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        toast("数据异常");
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                toast("数据获取失败");
+            }
         }
-    }*/
+    };*/
 }

@@ -1,13 +1,14 @@
-package com.example.amap3d;
+package com.example.amap3d.Gsons;
 
 /**
- * Created by BieTong on 2018/3/15.
+ * Created by BieTong on 2018/3/18.
  */
 
-public class BusPositionGson {
+public class BusMoveGson {
+
     private String GPSDeviceIMEI;
-    private String lat;
-    private String lng;
+    private double lat;
+    private double lng;
 
     public String getGPSDeviceIMEI() {
         return GPSDeviceIMEI;
@@ -17,19 +18,19 @@ public class BusPositionGson {
         this.GPSDeviceIMEI = GPSDeviceIMEI;
     }
 
-    public String getLat() {
+    public double getLat() {
         return lat;
     }
 
-    public void setLat(String lat) {
+    public void setLat(double lat) {
         this.lat = lat;
     }
 
-    public String getLng() {
+    public double getLng() {
         return lng;
     }
 
-    public void setLng(String lng) {
+    public void setLng(double lng) {
         this.lng = lng;
     }
 }
