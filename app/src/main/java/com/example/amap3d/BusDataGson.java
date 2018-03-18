@@ -10,7 +10,7 @@ import java.util.List;
 public class BusDataGson {
     private String bus_lineName;
     private String bus_departureSite;
-//    private String bus_arriveSite;
+    private String bus_arriveSite;
 //    private int bus_status;
     private String GPSDeviceIMEI;
 //    private int sort;
@@ -31,14 +31,14 @@ public class BusDataGson {
         this.bus_departureSite = bus_departureSite;
     }
 
-//    public String getBus_arriveSite() {
-//        return bus_arriveSite;
-//    }
-//
-//    public void setBus_arriveSite(String bus_arriveSite) {
-//        this.bus_arriveSite = bus_arriveSite;
-//    }
-//
+    public String getBus_arriveSite() {
+        return bus_arriveSite;
+    }
+
+    public void setBus_arriveSite(String bus_arriveSite) {
+        this.bus_arriveSite = bus_arriveSite;
+    }
+
 //    public int getBus_status() {
 //        return bus_status;
 //    }
