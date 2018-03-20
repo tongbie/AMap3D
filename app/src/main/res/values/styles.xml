@@ -12,6 +12,6 @@
     <style name="WelcomeTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-        <item name="android:windowBackground">@drawable/img_4</item>
+        <item name="android:windowBackground">@drawable/welcome</item>
     </style>
 </resources>
