@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mqttOptions = new MqttConnectOptions();
         mqttOptions.setCleanSession(true);
-        mqttOptions.setConnectionTimeout(20);// 设置超时时间 单位为秒
+        mqttOptions.setConnectionTimeout(20);
         mqttOptions.setKeepAliveInterval(120);
     }
 
@@ -133,17 +133,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     AMap.OnMarkerClickListener markerClickListener = new AMap.OnMarkerClickListener() {
         @Override
         public boolean onMarkerClick(Marker marker) {
-//            Iterator iterator = new HashMap().entrySet().iterator();
-//            while (iterator.hasNext()) {
-//                Map.Entry entry = (Map.Entry) iterator.next();
-//                String key = (String) entry.getKey();
-//                markerMap.get(key).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus1));
-//            }
             if (marker.isInfoWindowShown()) {
                 marker.hideInfoWindow();
             } else {
                 marker.showInfoWindow();
-//                marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
             }
             return true;
         }
@@ -234,8 +227,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     String password = account.getPassword();
                     TelephonyManager tm = (TelephonyManager) getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
                     if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_PHONE_STATE}, 0x002);
-                        thread.sleep(99999);
+                        Toast.makeText(getApplicationContext(), "未获得电话权限，程序无法正常使用", Toast.LENGTH_LONG).show();
+                        finish();
                     }
                     String ssn = tm.getSimSerialNumber();
                     mqttOptions.setUserName(username);
@@ -247,8 +240,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         mqttClient.setCallback(mqttCallback);
                         mqttClient.connect(mqttOptions);
                         subscribeMsg("BusMoveList", 0);
-                        if (!mqttClient.isConnected())
-                            throw new Exception("throw");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -273,7 +264,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void setAMap() {
-
         if (aMap == null) {
             aMap = mapView.getMap();
         }
@@ -296,7 +286,45 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mUiSettings.setTiltGesturesEnabled(false);
 
         aMap.setInfoWindowAdapter(infoWindowAdapter);
+        aMap.setOnInfoWindowClickListener(infoWindowClickListener);
     }
+
+    AMap.OnInfoWindowClickListener infoWindowClickListener = new AMap.OnInfoWindowClickListener() {
+        @Override
+        public void onInfoWindowClick(Marker marker) {
+            final String num = marker.getSnippet();
+            if (num == null) {
+                return;
+            } else {
+                if (num.length() < 10) {
+                    return;
+                }
+            }
+            AlertDialog dialog = new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("拨号")
+                    .setMessage("是否拨打 " + num)
+                    .setNegativeButton("确定", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.CALL_PHONE}, 0x003);
+                            }else {
+                                Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + num));
+                                startActivity(intent);
+                                dialog.dismiss();
+                            }
+                        }
+                    })
+                    .setPositiveButton("取消", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                            dialog.dismiss();
+                        }
+                    }).create();
+            dialog.show();
+        }
+    };
 
     AMap.InfoWindowAdapter infoWindowAdapter = new AMap.ImageInfoWindowAdapter() {
         View infoWindow = null;
@@ -319,37 +347,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
             ((TextView) infoWindow.findViewById(R.id.text)).setText(marker.getTitle());
             Button button = infoWindow.findViewById(R.id.button);
+            button.setClickable(false);//////////////////////////
             final String num = marker.getSnippet();
             button.setText(num);
-            button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    AlertDialog dialog = new AlertDialog.Builder(getApplicationContext())
-                            .setTitle("拨号")
-                            .setMessage("是否拨打 " + num)
-                            .setNegativeButton("确定", new DialogInterface.OnClickListener() {
-                                @SuppressLint("MissingPermission")
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-                                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.CALL_PHONE}, 0x003);
-                                        return;
-                                    }
-                                    Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + "18340096853"));
-                                    startActivity(intent);
-                                    dialog.dismiss();
-                                }
-                            })
-                            .setPositiveButton("取消", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-
-                                    dialog.dismiss();
-                                }
-                            }).create();
-                    dialog.show();
-                }
-            });
             return infoWindow;
         }
     };
@@ -358,7 +358,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.refresh:
-                ((MyButton) findViewById(R.id.refresh)).setRefreshing(true);
+                toast("正在刷新...");
                 refresh();
                 break;
         }
@@ -406,9 +406,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     LatLng latLng = markerMap.get(key).getPosition();
                     double lat = latLng.latitude;
                     double lng = latLng.longitude;
-                    if (markerMap.get(key).getTitle().charAt(0) == '3') {
-                        Log.e("new", String.valueOf(busMoveGson.getLat()) + " " + String.valueOf(busMoveGson.getLng()));
-                    }
                     markerMap.get(key).setPosition(new LatLng(busMoveGson.getLat(), busMoveGson.getLng()));
                     markerMap.get(key).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
                     translate(new LatLng[]{new LatLng(lat, lng), markerMap.get(key).getPosition()}, key);
@@ -487,22 +484,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
-            case 0x002:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if(thread!=null){
-//                        thread.
-                    }
-                } else {
-                    toast("未获得读取电话状态权限，无法连接服务器");
-                    finish();
-                }
-                break;
             case 0x003:
                 if (!(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     toast("未获得拨号权限，无法拨打电话");
                 }
                 break;
         }
-        refresh();
     }
 }

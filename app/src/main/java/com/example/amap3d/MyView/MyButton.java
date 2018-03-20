@@ -29,17 +29,17 @@ public class MyButton extends android.support.v7.widget.AppCompatButton {
 
     public MyButton(Context context) {
         super(context);
-        init();
+//        init();
     }
 
     public MyButton(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        init();
+//        init();
     }
 
     public MyButton(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+//        init();
     }
 
     private void init(){
@@ -62,16 +62,16 @@ public class MyButton extends android.support.v7.widget.AppCompatButton {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawColor(Color.parseColor("#ffffff"));
-        canvas.drawBitmap(bitmap,matrix,paint);
+//        canvas.drawColor(Color.parseColor("#ffffff"));
+//        canvas.drawBitmap(bitmap,matrix,paint);
 //        canvas.rotate(degree);
-        degree+=2;
-        if(degree>360){
-            degree=0;
-        }
-        if(isRefreshing){
-            invalidate();
-        }
+//        degree+=2;
+//        if(degree>360){
+//            degree=0;
+//        }
+//        if(isRefreshing){
+//            invalidate();
+//        }
     }
 
     @Override
