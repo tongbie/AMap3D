@@ -4,7 +4,7 @@ package com.example.amap3d.Gsons;
  * Created by BieTong on 2018/3/17.
  */
 
-public class AccountGson {
+public class MQTTAccountGson {
     private String username;
     private String password;
 

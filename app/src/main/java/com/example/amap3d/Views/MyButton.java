@@ -1,4 +1,4 @@
-package com.example.amap3d.MyView;
+package com.example.amap3d.Views;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -9,8 +9,6 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.view.View;
-import android.widget.Button;
 
 import com.example.amap3d.R;
 
