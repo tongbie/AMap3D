@@ -20,36 +20,24 @@ public class WelcomeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        requestPermissions();
-        if (ContextCompat.checkSelfPermission(WelcomeActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(WelcomeActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 0x001);
-        }else {
-            if (ContextCompat.checkSelfPermission(WelcomeActivity.this, android.Manifest.permission.ACCESS_LOCATION_EXTRA_COMMANDS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(WelcomeActivity.this, new String[]{android.Manifest.permission.ACCESS_LOCATION_EXTRA_COMMANDS}, 0x001);
-            }else {
-                if (ContextCompat.checkSelfPermission(WelcomeActivity.this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(WelcomeActivity.this, new String[]{android.Manifest.permission.READ_PHONE_STATE}, 0x002);
-                }else {
-                    startActivity(new Intent(WelcomeActivity.this, MainActivity.class));
-                    finish();
-                }
-            }
-        }
+        requestPermissions();
     }
 
     private void requestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (ContextCompat.checkSelfPermission(WelcomeActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(WelcomeActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 0x000);
-            }
-            if (ContextCompat.checkSelfPermission(WelcomeActivity.this, android.Manifest.permission.ACCESS_LOCATION_EXTRA_COMMANDS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(WelcomeActivity.this, new String[]{android.Manifest.permission.ACCESS_LOCATION_EXTRA_COMMANDS}, 0x001);
-            }
-            if (ContextCompat.checkSelfPermission(WelcomeActivity.this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(WelcomeActivity.this, new String[]{android.Manifest.permission.READ_PHONE_STATE}, 0x002);
-            }
-            if (ContextCompat.checkSelfPermission(WelcomeActivity.this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(WelcomeActivity.this, new String[]{android.Manifest.permission.CALL_PHONE}, 0x003);
+                ActivityCompat.requestPermissions(WelcomeActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 0x001);
+            }else {
+                if (ContextCompat.checkSelfPermission(WelcomeActivity.this, android.Manifest.permission.ACCESS_LOCATION_EXTRA_COMMANDS) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(WelcomeActivity.this, new String[]{android.Manifest.permission.ACCESS_LOCATION_EXTRA_COMMANDS}, 0x001);
+                }else {
+                    if (ContextCompat.checkSelfPermission(WelcomeActivity.this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(WelcomeActivity.this, new String[]{android.Manifest.permission.READ_PHONE_STATE}, 0x002);
+                    }else {
+                        startActivity(new Intent(WelcomeActivity.this, MainActivity.class));
+                        finish();
+                    }
+                }
             }
         }
     }

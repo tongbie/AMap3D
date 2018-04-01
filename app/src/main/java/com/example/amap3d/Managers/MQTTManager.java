@@ -42,8 +42,8 @@ public class MQTTManager {
 
         mqttOptions = new MqttConnectOptions();
         mqttOptions.setCleanSession(true);
-        mqttOptions.setConnectionTimeout(20);
-        mqttOptions.setKeepAliveInterval(120);
+        mqttOptions.setConnectionTimeout(20);//超时时间20s
+        mqttOptions.setKeepAliveInterval(120);//心跳时间，用以服务端判断客户端在线状态
 
         client = new OkHttpClient.Builder()
                 .connectTimeout(20, TimeUnit.SECONDS)
@@ -52,6 +52,7 @@ public class MQTTManager {
         gson = new Gson();
     }
 
+    /* 连接MQTT服务器 */
     public void linkMQTT(MqttCallback mqttCallback) {
         try {
             Request request = new Request.Builder()
@@ -67,11 +68,13 @@ public class MQTTManager {
                     String username = account.getUsername();
                     String password = account.getPassword();
                     TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+                    //使用设备码作为唯一标识key，需要电话权限
                     if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
                         Toast.makeText(context, "未获得电话权限，程序无法正常使用", Toast.LENGTH_LONG).show();
                         activity.finish();
                     }
                     String ssn = tm.getSimSerialNumber();
+                    //断线不支持重连，必须申请新的username
                     mqttOptions.setUserName(username);
                     mqttOptions.setPassword(password.toCharArray());
                     mqttClient = new MqttClient("tcp://111.231.201.179:1880", ssn, new MemoryPersistence());
@@ -92,6 +95,7 @@ public class MQTTManager {
         }
     }
 
+    /* 订阅消息 */
     public void subscribeMsg(String topic, int qos) {
         if (mqttClient != null) {
             int[] Qos = {qos};
@@ -104,6 +108,7 @@ public class MQTTManager {
         }
     }
 
+    /* 断开连接 */
     public void disconnect() {
         if (mqttClient != null && mqttClient.isConnected()) {
             try {

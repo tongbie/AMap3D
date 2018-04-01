@@ -9,14 +9,21 @@
     <com.amap.api.maps.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
-    <com.example.amap3d.Views.MyButton
+    <com.example.amap3d.Views.RefreshButton
         android:id="@+id/refresh"
-android:background="@drawable/refresh"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginLeft="9dp"/>
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="8dp" />
+
+    <com.example.amap3d.Views.MenuButton
+        android:id="@+id/menu"
+        android:layout_gravity="bottom|left"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="8dp" />
 
 </FrameLayout>

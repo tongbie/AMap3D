@@ -32,6 +32,7 @@ public class AMapManager {
         this.activity=activity;
     }
 
+    /* 校车信息弹窗 */
     public AMap.InfoWindowAdapter infoWindowAdapter = new AMap.ImageInfoWindowAdapter() {
         View infoWindow = null;
 
@@ -45,6 +46,7 @@ public class AMapManager {
             return null;
         }
 
+        /* 自定义校车详情弹窗 */
         @Override
         public View getInfoContents(Marker marker) {
             if (infoWindow == null) {
@@ -60,6 +62,7 @@ public class AMapManager {
         }
     };
 
+    /* 校车信息弹窗点击事件，用以拨号 */
     public AMap.OnInfoWindowClickListener infoWindowClickListener = new AMap.OnInfoWindowClickListener() {
         @Override
         public void onInfoWindowClick(Marker marker) {
@@ -97,6 +100,7 @@ public class AMapManager {
         }
     };
 
+    /* 校车标记点击事件，用以弹窗 */
     public AMap.OnMarkerClickListener markerClickListener = new AMap.OnMarkerClickListener() {
         @Override
         public boolean onMarkerClick(Marker marker) {

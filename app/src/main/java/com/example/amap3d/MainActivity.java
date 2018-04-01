@@ -25,6 +25,7 @@ import com.example.amap3d.Gsons.BusMoveGson;
 import com.example.amap3d.Gsons.BusPositionGson;
 import com.example.amap3d.Managers.AMapManager;
 import com.example.amap3d.Managers.MQTTManager;
+import com.example.amap3d.Views.RefreshButton;
 import com.google.gson.reflect.TypeToken;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -41,16 +42,14 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-    private MapView mapView;
-    private AMap aMap;
-    private boolean isFirstMove = true;
+    private MapView mapView;//地图控件
+    private AMap aMap;//定位对象
     public static MQTTManager mqttManager;
     public static AMapManager aMapManager;
 
-
-    private HashMap<String, String[]> busDataMap;
-    private HashMap<String, Marker> markerMap;
-    private List<BusPositionGson> busPositionList = new ArrayList<>();
+    private HashMap<String, String[]> busDataMap;//校车信息
+    private HashMap<String, Marker> markerMap;//校车定位点
+    private List<BusPositionGson> busPositionList = new ArrayList<>();//校车位置
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,17 +65,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void init() {
         mqttManager = new MQTTManager(getApplicationContext(), MainActivity.this);
-        aMapManager = new AMapManager(getApplicationContext(),MainActivity.this);
+        aMapManager = new AMapManager(getApplicationContext(), MainActivity.this);
         findViewById(R.id.refresh).setOnClickListener(this);
         markerMap = new HashMap<>();
         busDataMap = new HashMap<>();
     }
 
+    private boolean isFirstMove = true;//用以判断在启动时移动地图至定位点
+
     private void setAMap() {
         if (aMap == null) {
             aMap = mapView.getMap();
         }
-        aMap.moveCamera(CameraUpdateFactory.zoomTo(17));
+        aMap.moveCamera(CameraUpdateFactory.zoomTo(17));//缩放
         aMap.setOnMyLocationChangeListener(new AMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
@@ -89,7 +90,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
         aMap.setOnMarkerClickListener(aMapManager.markerClickListener);
 
-        UiSettings mUiSettings;
+        UiSettings mUiSettings;//地图不可旋转，3D
         mUiSettings = aMap.getUiSettings();
         mUiSettings.setRotateGesturesEnabled(false);
         mUiSettings.setTiltGesturesEnabled(false);
@@ -101,16 +102,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void setLocationStyle() {
         MyLocationStyle myLocationStyle = new MyLocationStyle();
         myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE_NO_CENTER);
-        myLocationStyle.interval(1000);
+        myLocationStyle.interval(1500);//连续定位间隔
         myLocationStyle.showMyLocation(true);
-        myLocationStyle.radiusFillColor(Color.parseColor("#00000000"));
-        myLocationStyle.strokeColor(Color.parseColor("#00000000"));
+        myLocationStyle.radiusFillColor(Color.parseColor("#00000000"));//定位精度圈透明
+        myLocationStyle.strokeColor(Color.parseColor("#00000000"));//定位精度圈边缘透明
         myLocationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.me));
         aMap.setMyLocationStyle(myLocationStyle);
         aMap.getUiSettings().setMyLocationButtonEnabled(true);
         aMap.setMyLocationEnabled(true);
     }
 
+    /* 获取校车信息 */
     private void initBusData() {
         try {
             Request request = new Request.Builder()
@@ -141,6 +143,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    /* 添加校车定位点 */
     private void initPoints() {
         if (busPositionList == null) {
             toast("数据异常");
@@ -155,6 +158,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    /* 获取校车位置 */
     private void initBusPosition() {
         try {
             Request request = new Request.Builder()
@@ -181,6 +185,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private Thread thread;
 
+    /* 获取数据，用以刷新 */
     private void initData() {
         thread = new Thread(new Runnable() {
             @Override
@@ -189,6 +194,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 initBusPosition();
                 initPoints();
                 mqttManager.linkMQTT(mqttCallback);
+                ((RefreshButton) findViewById(R.id.refresh)).setRefreshing(false);
+                isRefreshing = false;
             }
         });
         thread.start();
@@ -198,25 +205,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.refresh:
+                ((RefreshButton) v).setRefreshing(true);
                 toast("正在刷新...");
                 refresh();
                 break;
         }
     }
 
+    private boolean isRefreshing = false;
+
     private void refresh() {
+        if (isRefreshing) {
+            return;
+        }
         thread = null;
         aMap.clear();
         busDataMap.clear();
         busPositionList.clear();
         markerMap.clear();
         mqttManager.disconnect();
+        isRefreshing = true;
+        isFristReconnect = true;
         initData();
     }
 
+    private boolean isFristReconnect = true;//掉线只进行一次重连
 
-    private boolean isFristReconnect = true;
-
+    /* MQTT接收消息回调 */
     MqttCallback mqttCallback = new MqttCallback() {
         @Override
         public void connectionLost(Throwable cause) {
@@ -252,7 +267,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     };
 
+    /* 设置平滑移动点 */
     private void moveMarker(LatLng[] latLngs, final String key) {
+        //TODO：移动点是一个新的对象，不能添加信息
         final SmoothMoveMarker smoothMarker = new SmoothMoveMarker(aMap);
         smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.bus_move));
         smoothMarker.setPoints(Arrays.asList(latLngs));
@@ -262,7 +279,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         smoothMarker.setMoveListener(new SmoothMoveMarker.MoveListener() {
             @Override
             public void move(double v) {
-                if (v == 0) {
+                if (v == 0) {//参数v为距终点距离
                     smoothMarker.stopMove();
                     smoothMarker.removeMarker();
                     markerMap.get(key).setVisible(true);

@@ -1,6 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        别同 {
+            keyAlias 'build'
+            keyPassword 'bt19971118'
+        }
+    }
     compileSdkVersion 26
     defaultConfig {
         applicationId "com.example.amap3d"
@@ -14,6 +20,9 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.别同
+        }
+        buildType {
         }
     }
 }
@@ -29,5 +38,5 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.4.1'
     compile 'com.google.code.gson:gson:2.7'
     compile 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.1.0'
-//    compile 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.0'
+    //    compile 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.0'
 }
