@@ -6,17 +6,21 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.Uri;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
 import com.amap.api.maps.AMap;
+import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.Marker;
+import com.amap.api.maps.model.MyLocationStyle;
 import com.example.amap3d.R;
 
 /**
@@ -30,6 +34,20 @@ public class AMapManager {
     public AMapManager(Context context,Activity activity){
         this.context=context;
         this.activity=activity;
+    }
+
+    /* 设置定位模式 */
+    public void setLocationStyle(AMap aMap) {
+        MyLocationStyle myLocationStyle = new MyLocationStyle();
+        myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE_NO_CENTER);
+        myLocationStyle.interval(1500);//连续定位间隔
+        myLocationStyle.showMyLocation(true);
+        myLocationStyle.radiusFillColor(Color.parseColor("#00000000"));//定位精度圈透明
+        myLocationStyle.strokeColor(Color.parseColor("#00000000"));//定位精度圈边缘透明
+        myLocationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.me));
+        aMap.setMyLocationStyle(myLocationStyle);
+        aMap.getUiSettings().setMyLocationButtonEnabled(true);
+        aMap.setMyLocationEnabled(true);
     }
 
     /* 校车信息弹窗 */

@@ -1,13 +1,15 @@
 package com.example.amap3d;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import com.amap.api.maps.AMap;
@@ -18,13 +20,14 @@ import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
-import com.amap.api.maps.model.MyLocationStyle;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
+import com.example.amap3d.BusTimetable.BusTimetableActivity;
 import com.example.amap3d.Gsons.BusDataGson;
 import com.example.amap3d.Gsons.BusMoveGson;
 import com.example.amap3d.Gsons.BusPositionGson;
 import com.example.amap3d.Managers.AMapManager;
 import com.example.amap3d.Managers.MQTTManager;
+import com.example.amap3d.Views.MenuButton;
 import com.example.amap3d.Views.RefreshButton;
 import com.google.gson.reflect.TypeToken;
 
@@ -59,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mapView.onCreate(savedInstanceState);
         init();
         setAMap();
-        setLocationStyle();
+        aMapManager.setLocationStyle(aMap);
         initData();
     }
 
@@ -67,8 +70,35 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mqttManager = new MQTTManager(getApplicationContext(), MainActivity.this);
         aMapManager = new AMapManager(getApplicationContext(), MainActivity.this);
         findViewById(R.id.refresh).setOnClickListener(this);
+        findViewById(R.id.menu).setOnClickListener(this);
         markerMap = new HashMap<>();
         busDataMap = new HashMap<>();
+        initPopupMenu();
+    }
+
+    PopupMenu popupMenu;
+
+    private void initPopupMenu() {
+        final MenuButton menuButton = findViewById(R.id.menu);
+        popupMenu = new PopupMenu(getApplicationContext(), menuButton);
+        popupMenu.getMenuInflater().inflate(R.menu.main, popupMenu.getMenu());
+        popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
+            @Override
+            public void onDismiss(PopupMenu menu) {
+                menuButton.setIsShow(0);
+            }
+        });
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.timeTable:
+                        startActivity(new Intent(MainActivity.this,BusTimetableActivity.class));
+                        break;
+                }
+                return false;
+            }
+        });
     }
 
     private boolean isFirstMove = true;//用以判断在启动时移动地图至定位点
@@ -97,19 +127,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         aMap.setInfoWindowAdapter(aMapManager.infoWindowAdapter);
         aMap.setOnInfoWindowClickListener(aMapManager.infoWindowClickListener);
-    }
-
-    private void setLocationStyle() {
-        MyLocationStyle myLocationStyle = new MyLocationStyle();
-        myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE_NO_CENTER);
-        myLocationStyle.interval(1500);//连续定位间隔
-        myLocationStyle.showMyLocation(true);
-        myLocationStyle.radiusFillColor(Color.parseColor("#00000000"));//定位精度圈透明
-        myLocationStyle.strokeColor(Color.parseColor("#00000000"));//定位精度圈边缘透明
-        myLocationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.me));
-        aMap.setMyLocationStyle(myLocationStyle);
-        aMap.getUiSettings().setMyLocationButtonEnabled(true);
-        aMap.setMyLocationEnabled(true);
     }
 
     /* 获取校车信息 */
@@ -202,12 +219,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
+    public void onClick(View view) {
+        switch (view.getId()) {
             case R.id.refresh:
-                ((RefreshButton) v).setRefreshing(true);
+                ((RefreshButton) view).setRefreshing(true);
                 toast("正在刷新...");
                 refresh();
+                break;
+            case R.id.menu:
+                MenuButton menuButton = ((MenuButton) view);
+                if (menuButton.getIsShow() != 1) {
+                    menuButton.setIsShow(1);
+                } else if (menuButton.getIsShow() == 1) {
+                    menuButton.setIsShow(0);
+                }
+                popupMenu.show();
                 break;
         }
     }

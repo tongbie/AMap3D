@@ -67,8 +67,8 @@ public class RefreshButton extends android.support.v7.widget.AppCompatButton {
     }
 
     @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
         width = getWidth();
         height = getHeight();
         bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.refresh);
