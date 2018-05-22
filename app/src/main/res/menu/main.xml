@@ -4,4 +4,7 @@
     <item
         android:id="@+id/timeTable"
         android:title="校车时间表" />
+    <item
+        android:id="@+id/upDate"
+        android:title="检查更新" />
 </menu>

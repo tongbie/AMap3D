@@ -49,7 +49,7 @@ public class RefreshButton extends android.support.v7.widget.AppCompatButton {
 
     }
 
-    public void setRefreshing(boolean isRefreshing) {
+    public synchronized void setRefreshing(boolean isRefreshing) {
         this.isRefreshing = isRefreshing;
         if (isRefreshing) {
             invalidate();

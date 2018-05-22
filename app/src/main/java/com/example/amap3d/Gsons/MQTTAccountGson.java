@@ -9,6 +9,9 @@ public class MQTTAccountGson {
     private String password;
 
     public String getUsername() {
+        if(username==null){
+            return ""
+;        }
         return username;
     }
 
@@ -17,6 +20,9 @@ public class MQTTAccountGson {
     }
 
     public String getPassword() {
+        if(password==null){
+            return "";
+        }
         return password;
     }
 

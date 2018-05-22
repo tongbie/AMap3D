@@ -10,6 +10,9 @@ public class BusPositionGson {
     private String lng;
 
     public String getGPSDeviceIMEI() {
+        if(GPSDeviceIMEI==null){
+            GPSDeviceIMEI="";
+        }
         return GPSDeviceIMEI;
     }
 
@@ -18,6 +21,9 @@ public class BusPositionGson {
     }
 
     public String getLat() {
+        if(lat==null){
+            lat="";
+        }
         return lat;
     }
 
@@ -26,6 +32,9 @@ public class BusPositionGson {
     }
 
     public String getLng() {
+        if(lng==null){
+            return lng;
+        }
         return lng;
     }
 

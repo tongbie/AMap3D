@@ -7,7 +7,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Location;
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -16,24 +18,53 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.amap.api.maps.AMap;
+import com.amap.api.maps.CameraUpdateFactory;
+import com.amap.api.maps.MapView;
+import com.amap.api.maps.UiSettings;
 import com.amap.api.maps.model.BitmapDescriptorFactory;
+import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
+import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.MyLocationStyle;
+import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
+import com.example.amap3d.Datas;
+import com.example.amap3d.Gsons.BusDataGson;
+import com.example.amap3d.Gsons.BusPositionGson;
 import com.example.amap3d.R;
+import com.example.amap3d.Utils;
+import com.example.amap3d.Views.MapViewContainerView;
+import com.google.gson.reflect.TypeToken;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import okhttp3.Request;
+import okhttp3.Response;
 
 /**
  * Created by BieTong on 2018/3/20.
  */
 
 public class AMapManager {
+    public static AMap aMap;
+    public static MapView mapView;
     private Context context;
     private Activity activity;
 
-    public AMapManager(Context context,Activity activity){
-        this.context=context;
-        this.activity=activity;
+    public AMapManager(Context context, Activity activity) {
+        this.context = context;
+        this.activity = activity;
+    }
+
+    public void initMapView(Bundle savedInstanceState) {
+        AMapManager.mapView = new MapView(context);
+        ((MapViewContainerView) activity.findViewById(R.id.mapViewContainerView)).addView(AMapManager.mapView);
+        AMapManager.mapView.onCreate(savedInstanceState);
     }
 
     /* 设置定位模式 */
@@ -130,4 +161,79 @@ public class AMapManager {
             return true;
         }
     };
+
+    /* 添加校车定位点 */
+    public synchronized void addPoints(AMap aMap) {
+        if (Datas.busPositionList == null) {
+            uiToast("校车位置获取失败");
+            return;
+        }
+        try {
+            for (BusPositionGson busPosition : Datas.busPositionList) {
+                String key = busPosition.getGPSDeviceIMEI();
+                LatLng latLng = new LatLng(Double.parseDouble(busPosition.getLat()), Double.parseDouble(busPosition.getLng()));
+                Marker marker = aMap.addMarker(new MarkerOptions().position(latLng).title(Datas.busInformationMap.get(key)[0]).snippet(Datas.busInformationMap.get(key)[1]));
+                marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus1));
+                Datas.busMarkerMap.put(key, marker);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            uiToast(e.getMessage());
+        }
+    }
+
+    /* 设置平滑移动点 */
+    public static void moveMarker(AMap aMap, LatLng[] latLngs, final String key) {
+        //TODO：移动点是一个新的对象，不能添加信息
+        final SmoothMoveMarker smoothMarker = new SmoothMoveMarker(aMap);
+        smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.bus_move));
+        smoothMarker.setPoints(Arrays.asList(latLngs));
+        smoothMarker.setTotalDuration(3);
+        smoothMarker.startSmoothMove();
+        Datas.busMarkerMap.get(key).setVisible(false);
+        smoothMarker.setMoveListener(new SmoothMoveMarker.MoveListener() {
+            @Override
+            public void move(double v) {
+                if (v == 0) {//参数v为距终点距离
+                    smoothMarker.stopMove();
+                    smoothMarker.removeMarker();
+                    Datas.busMarkerMap.get(key).setVisible(true);
+                }
+            }
+        });
+    }
+
+    private void uiToast(final String text) {
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private boolean isFirstMove = true;//用以判断在启动时移动地图至定位点
+
+    public void setAMap(final AMap aMap) {
+        aMap.moveCamera(CameraUpdateFactory.zoomTo(17));//缩放
+        aMap.setOnMyLocationChangeListener(new AMap.OnMyLocationChangeListener() {
+            @Override
+            public void onMyLocationChange(Location location) {
+                if (!isFirstMove) {
+                    aMap.setOnMyLocationChangeListener(null);
+                }
+                aMap.moveCamera(CameraUpdateFactory.changeLatLng(new LatLng(location.getLatitude(), location.getLongitude())));
+                isFirstMove = false;
+            }
+        });
+        aMap.setOnMarkerClickListener(markerClickListener);
+
+        UiSettings mUiSettings;//地图不可旋转，3D
+        mUiSettings = aMap.getUiSettings();
+        mUiSettings.setRotateGesturesEnabled(false);
+        mUiSettings.setTiltGesturesEnabled(false);
+
+        aMap.setInfoWindowAdapter(infoWindowAdapter);
+        aMap.setOnInfoWindowClickListener(infoWindowClickListener);
+    }
 }

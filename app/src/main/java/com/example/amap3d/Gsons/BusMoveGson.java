@@ -7,10 +7,13 @@ package com.example.amap3d.Gsons;
 public class BusMoveGson {
 
     private String GPSDeviceIMEI;
-    private double lat;
-    private double lng;
+    private double lat = 0;
+    private double lng = 0;
 
     public String getGPSDeviceIMEI() {
+        if (GPSDeviceIMEI == null) {
+            GPSDeviceIMEI = "";
+        }
         return GPSDeviceIMEI;
     }
 
