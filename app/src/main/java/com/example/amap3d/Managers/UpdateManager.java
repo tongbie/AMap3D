@@ -45,26 +45,19 @@ import static android.content.Context.NOTIFICATION_SERVICE;
  */
 
 public class UpdateManager {
-    private Activity activity;
-    private ProgressDialog dialog;
     private ServiceConnection conn;
-    private DownloadService.DownloadBinder iBinder;
 
-    private String externalStorageDirectoryChild = "SchoolBusQuery";
     private static String updateDescription;
-    private static String downloadApkURL = "http://bus.mysdnu.cn/android/latest/:type";
     private static String versionCodeURL = "http://bus.mysdnu.cn/android/update/:type";
+
+    public static String downloadApkURL = "http://bus.mysdnu.cn/android/latest/:type";
+    public static String downloadPathName ="SchoolBusQuery";
 
     public static final int UPDATE_NOT_NEED = 0;
     public static final int UPDATA_CLIENT = 1;
     public static final int UPDATE_FORCE = 2;
     public static final int UPDATE_LOCAL_VERSION_ERROR = 3;
     public static final int UPDATE_SERVICE_VERSION_ERROR = 4;
-
-
-    public UpdateManager(final Activity activity) {
-        this.activity = activity;
-    }
 
     public static int isNeedUpdate(final Context context) {
         final int[] versionState = {0};
@@ -109,22 +102,6 @@ public class UpdateManager {
         return versionState[0];
     }
 
-    private Notification getNotification(String title, int progress) {
-        Intent intent = new Intent(activity, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(activity, 0, intent, 0);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(activity);
-        builder.setSmallIcon(R.mipmap.ic_launcher);
-        builder.setLargeIcon(BitmapFactory.decodeResource(activity.getResources(), R.drawable.sign));
-        builder.setContentIntent(pendingIntent);
-        builder.setContentTitle(title);
-        builder.setPriority(NotificationCompat.PRIORITY_HIGH);//设置通知重要程度，min,low,默认,high，max
-        if (progress > 0) {
-            builder.setContentText(progress + "%");
-            builder.setProgress(100, progress, false);//三个参数，最大进度，当前进度，是否使用模糊进度条
-        }
-        return builder.build();
-    }
-
     public void dealWithUpdateState(int versionCode) {
         switch (versionCode) {
             case UPDATE_NOT_NEED:
@@ -136,126 +113,17 @@ public class UpdateManager {
                 showUpdataDialog(true);
                 break;
             case UPDATE_LOCAL_VERSION_ERROR:
-                uiToast("应用版本信息获取失败");
+                Utils.uiToast("应用版本信息获取失败");
                 break;
             case UPDATE_SERVICE_VERSION_ERROR:
-                uiToast("服务器版本信息获取失败");
+                Utils.uiToast("服务器版本信息获取失败");
                 break;
             default:
         }
     }
 
-    public void downloadApk() {
-        if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            Toast.makeText(activity, "SD卡不可用，请检查权限设置", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        initDialog();
-        Request request = new Request.Builder()
-                .url(downloadApkURL)
-                .build();
-        Utils.client.newCall(request).enqueue(new okhttp3.Callback() {
-
-            @Override
-            public void onFailure(Call call, IOException e) {
-                uiToast("安装包下载失败");
-                call.cancel();
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                InputStream inputStream = null;
-                FileOutputStream fileOutputStream = null;
-                try {
-                    inputStream = response.body().byteStream();//获取输入流
-                    long fileSize = response.body().contentLength() / 1024;//获取文件大小
-                    dialog.setMax((int) fileSize);
-                    if (inputStream != null) {
-                        File file = new File(Environment.getExternalStorageDirectory(), externalStorageDirectoryChild);
-                        fileOutputStream = new FileOutputStream(file);
-                        byte[] bytes = new byte[1024];
-                        int bytesNum = -1;
-                        int process = 0;
-                        while ((bytesNum = inputStream.read(bytes)) != -1) {
-                            fileOutputStream.write(bytes, 0, bytesNum);
-                            process += bytesNum / 1024;
-                            setDialogProgress(process);
-                            //TODO:
-                            NotificationManager notificationManager = (NotificationManager) activity.getSystemService(NOTIFICATION_SERVICE);
-                            notificationManager.notify(1, getNotification("下载中：", (int) (process/fileSize)));
-
-                        }
-                        if (file.exists()) {
-                            installApk();
-                        } else {
-                            uiToast("升级包获取失败");
-                            dialog.cancel();
-                        }
-                    }
-                    fileOutputStream.flush();
-                    if (fileOutputStream != null) {
-                        fileOutputStream.close();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    uiToast("文件写入失败");
-                    return;
-                } finally {
-                    try {
-                        if (inputStream != null) {
-                            inputStream.close();
-                        }
-                        if (fileOutputStream != null) {
-                            fileOutputStream.close();
-                        }
-                    } catch (IOException e) {
-
-                    }
-                }
-            }
-        });
-    }
-
-    private void installApk() {
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) { //android N的权限问题
-            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            Uri contentUri = FileProvider.getUriForFile(activity, "com.example.amap3d.fileprovider", new File(Environment.getExternalStorageDirectory(), externalStorageDirectoryChild));
-            intent.setDataAndType(contentUri, "application/vnd.android.package-archive");
-        } else {
-            intent.setDataAndType(Uri.fromFile(new File(Environment.getExternalStorageDirectory(), externalStorageDirectoryChild)), "application/vnd.android.package-archive");
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        }
-        activity.startActivity(intent);
-        dialog.cancel();
-    }
-
-    private void initDialog() {
-        dialog = new ProgressDialog(activity);
-        dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        dialog.setCancelable(false);
-        dialog.setTitle("正在下载...");
-        dialog.setMessage("请稍候...");
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                dialog.show();
-                dialog.setProgress(0);
-            }
-        });
-    }
-
-    private void uiToast(final String text) {
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
     private void showUpdataDialog(final boolean isForceUpdate) {
-        final AlertDialog.Builder builer = new AlertDialog.Builder(activity);
+        final AlertDialog.Builder builer = new AlertDialog.Builder(Utils.getMainActivity());
         builer.setTitle(isForceUpdate ? "有必须的更新" : "有可用的更新");
         builer.setCancelable(!isForceUpdate);
         builer.setMessage(updateDescription);
@@ -263,7 +131,7 @@ public class UpdateManager {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (isForceUpdate) {
-                    activity.finish();
+                    Utils.getMainActivity().finish();
                     return;
                 }
             }
@@ -271,14 +139,10 @@ public class UpdateManager {
         builer.setNegativeButton("升级", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                if(isForceUpdate) {
-                    downloadApk();
-                }else {
-                    downloadApkWithService();
-                }
+                downloadApkWithService();
             }
         });
-        activity.runOnUiThread(new Runnable() {
+        Utils.getMainActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 AlertDialog dialog = builer.create();
@@ -287,13 +151,12 @@ public class UpdateManager {
         });
     }
 
-    private void downloadApkWithService(){
+    private void downloadApkWithService() {
         conn = new ServiceConnection() {
 
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
-                iBinder = (DownloadService.DownloadBinder) service;
-                iBinder.startDownload(downloadApkURL);
+
             }
 
             @Override
@@ -301,16 +164,11 @@ public class UpdateManager {
 
             }
         };
-        Intent intent = new Intent(activity, DownloadService.class);
-        activity.startService(intent);
-        activity.bindService(intent, conn, BIND_AUTO_CREATE);
-    }
-
-    private void setDialogProgress(final int progress) {
-        activity.runOnUiThread(new Runnable() {
+        Utils.getMainActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                dialog.setProgress(progress);
+                Intent intent = new Intent(Utils.getMainActivity(), DownloadService.class);
+                Utils.getMainActivity().startService(intent);
             }
         });
     }

@@ -24,19 +24,14 @@ import okhttp3.Response;
  */
 
 public class BusDataManager {
-    private Context context;
-    private Activity activity;
-
-    public BusDataManager(Context context, Activity activity) {
-        this.context = context;
-        this.activity = activity;
-    }
+    public static String busDataURL = "http://bus.mysdnu.cn/android/bus";
+    public static String busPositionURL = "http://bus.mysdnu.cn/android/bus/location";
 
     /* 获取校车信息 */
     public synchronized void setBusInformationToMap() {
         try {
             Request request = new Request.Builder()
-                    .url(Utils.busDataURL)
+                    .url(busDataURL)
                     .build();
             Response response = Utils.client.newCall(request).execute();
             String responseData = response.body().string();
@@ -53,12 +48,12 @@ public class BusDataManager {
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    uiToast("校车信息异常");
+                    Utils.uiToast("校车信息异常");
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            uiToast("数据获取失败，请检查网络设置");
+            Utils.uiToast("数据获取失败，请检查网络设置");
         }
     }
 
@@ -67,7 +62,7 @@ public class BusDataManager {
         List<BusPositionGson> busPositionList = null;
         try {
             Request request = new Request.Builder()
-                    .url(Utils.busPositionURL)
+                    .url(busPositionURL)
                     .build();
             Response response = Utils.client.newCall(request).execute();
             String responseData = response.body().string();
@@ -78,23 +73,13 @@ public class BusDataManager {
                     }.getType());
                 } catch (Exception e) {
                     e.printStackTrace();
-                    uiToast("位置数据异常");
+                    Utils.uiToast("位置数据异常");
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            uiToast("数据获取失败");
+            Utils.uiToast("数据获取失败");
         }
         return busPositionList == null ? new ArrayList<BusPositionGson>() : busPositionList;
-    }
-
-
-    private void uiToast(final String text) {
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 }

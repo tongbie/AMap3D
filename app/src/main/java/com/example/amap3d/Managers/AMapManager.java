@@ -165,7 +165,7 @@ public class AMapManager {
     /* 添加校车定位点 */
     public synchronized void addPoints(AMap aMap) {
         if (Datas.busPositionList == null) {
-            uiToast("校车位置获取失败");
+            Utils.uiToast("校车位置获取失败");
             return;
         }
         try {
@@ -178,7 +178,7 @@ public class AMapManager {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            uiToast(e.getMessage());
+            Utils.uiToast(e.getMessage());
         }
     }
 
@@ -199,15 +199,6 @@ public class AMapManager {
                     smoothMarker.removeMarker();
                     Datas.busMarkerMap.get(key).setVisible(true);
                 }
-            }
-        });
-    }
-
-    private void uiToast(final String text) {
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
             }
         });
     }

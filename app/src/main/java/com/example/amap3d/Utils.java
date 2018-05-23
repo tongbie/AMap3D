@@ -2,32 +2,35 @@ package com.example.amap3d;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.hardware.display.DisplayManager;
 import android.net.ConnectivityManager;
-import android.util.DisplayMetrics;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.example.amap3d.Gsons.ApkVersionGson;
 import com.google.gson.Gson;
 
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 /**
  * Created by BieTong on 2018/4/7.
  */
 
 public class Utils {
-    public static String busDataURL = "http://bus.mysdnu.cn/android/bus";
-    public static String busPositionURL = "http://bus.mysdnu.cn/android/bus/location";
-    public static String pathName="SchoolBusQuery";
+
+    public static String pathName = "SchoolBusQuery";
+
+    private static Activity mainActivity;
+    private static Context appCompatContext;
+
+    public static Activity getMainActivity() {
+        return mainActivity;
+    }
+
+    public static Context getApplicationContext() {
+        return appCompatContext;
+    }
 
     public static OkHttpClient client;
     public static Gson gson;
@@ -40,8 +43,18 @@ public class Utils {
         gson = new Gson();
     }
 
-    private Utils() {
+    public Utils(Activity mainActivity, Context appCompatContext) {
+        this.mainActivity = mainActivity;
+        this.appCompatContext = appCompatContext;
+    }
 
+    public static void uiToast(final String text) {
+        mainActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(mainActivity, text, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     public static float dp(Context context, float px) {

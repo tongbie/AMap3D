@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         Utils.hideTitleBar(this);
         setContentView(R.layout.activity_main);
+        new Utils(this,getApplicationContext());
         initView();
         aMapManager.initMapView(savedInstanceState);
         if (AMapManager.aMap == null) {
@@ -63,18 +64,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                     return;
                 }
-                UpdateManager updateManager = new UpdateManager(MainActivity.this);
+                UpdateManager updateManager = new UpdateManager();
                 updateManager.dealWithUpdateState(updateState);
             }
         }).start();
     }
 
     private void initView() {
-        Datas.activity = MainActivity.this;
-        Datas.context = getApplicationContext();
-        mqttManager = new MQTTManager(getApplicationContext(), MainActivity.this);
+        mqttManager = new MQTTManager();
         aMapManager = new AMapManager(getApplicationContext(), MainActivity.this);
-        busDataManager = new BusDataManager(getApplicationContext(), MainActivity.this);
+        busDataManager = new BusDataManager();
 
         findViewById(R.id.refresh).setOnClickListener(this);
         findViewById(R.id.menu).setOnClickListener(this);
@@ -189,22 +188,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (requestCode) {
             case 0x003:
                 if (!(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    uiToast("未获得拨号权限，无法拨打电话");
+                    Utils.uiToast("未获得拨号权限，无法拨打电话");
                 }
                 break;
-        }
-    }
-
-    private void uiToast(final String text) {
-        try {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 

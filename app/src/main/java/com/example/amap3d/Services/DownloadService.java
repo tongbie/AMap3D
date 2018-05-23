@@ -7,12 +7,13 @@ import android.app.Service;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.Binder;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
+import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.example.amap3d.Datas;
@@ -31,108 +32,132 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class DownloadService extends Service {
-    private DownloadTask downloadTask;
-    private String downloadUrl;
-    private DownloadBinder mBinder = new DownloadBinder();
+    private NotificationManager notificationManager;
+    private boolean isFirstCommand = true;
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (isFirstCommand) {
+            notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        }
+        if (intent == null) {
+            notificationManager.cancelAll();
+        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                downloadApk();
+            }
+        }).start();
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    private Notification setNotification(int progress) {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);//避免重复打开activity
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        builder.setSmallIcon(R.mipmap.ic_launcher);
+        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.sign));
+        builder.setContentIntent(pendingIntent);
+        builder.setContentTitle("校车查询（更新下载中）");
+        builder.setOngoing(true);
+        builder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        builder.setContentText((progress > 0 ? progress : 0) + "%");
+        builder.setProgress(100, progress, false);
+        return builder.build();
+    }
+
+    public void downloadApk() {
+        if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+            Utils.uiToast("SD卡不可用，请检查权限设置");
+            return;
+        }
+        Request request = new Request.Builder()
+                .url(UpdateManager.downloadApkURL)
+                .build();
+        Utils.client.newCall(request).enqueue(new okhttp3.Callback() {
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Utils.uiToast("安装包下载失败");
+                call.cancel();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                InputStream inputStream = null;
+                FileOutputStream fileOutputStream = null;
+                try {
+                    inputStream = response.body().byteStream();//获取输入流
+                    long fileSize = response.body().contentLength();//获取文件大小
+                    if (inputStream != null) {
+                        File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.downloadPathName);
+                        fileOutputStream = new FileOutputStream(file);
+                        byte[] bytes = new byte[1024];
+                        int bytesNum = -1;
+                        int progress = 0;
+                        while ((bytesNum = inputStream.read(bytes)) != -1) {
+                            fileOutputStream.write(bytes, 0, bytesNum);
+                            progress += bytesNum;
+                            notificationManager.notify(10, setNotification((int) (progress * 100 / fileSize)));
+                        }
+                        if (file.exists()) {
+                            installApk();
+                        } else {
+                            Utils.uiToast("升级包获取失败");
+                        }
+                    }
+                    fileOutputStream.flush();
+                    if (fileOutputStream != null) {
+                        fileOutputStream.close();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Utils.uiToast("文件写入失败");
+                    return;
+                } finally {
+                    try {
+                        if (inputStream != null) {
+                            inputStream.close();
+                        }
+                        if (fileOutputStream != null) {
+                            fileOutputStream.close();
+                        }
+                    } catch (IOException e) {
+
+                    }
+                }
+            }
+        });
+        notificationManager.cancelAll();
+        stopSelf();
+    }
 
     private void installApk() {
         Intent intent = new Intent(Intent.ACTION_VIEW);
         File file = new File(Environment.getExternalStorageDirectory(), Utils.pathName);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) { //android N的权限问题
             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            Uri contentUri = FileProvider.getUriForFile(Datas.activity, "com.example.amap3d.fileprovider", file);
+            Uri contentUri = FileProvider.getUriForFile(Utils.getMainActivity(), "com.example.amap3d.fileprovider", file);
             intent.setDataAndType(contentUri, "application/vnd.android.package-archive");
         } else {
             intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
-        Datas.activity.startActivity(intent);
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return mBinder;
-    }
-
-    private DownloadListener listener = new DownloadListener() {
-        @Override
-        public void onProgress(int progress) {
-            getNotificationManager().notify(1, setNotification("下载中...", progress));
-        }
-
-        @Override
-        public void onSuccess() {
-            downloadTask = null;
-            //下载成功将前台服务通知关闭，并创建一个下载成功的通知
-            stopForeground(true);
-            getNotificationManager().notify(1, setNotification("下载成功，点击安装", -1));
-            installApk();
-        }
-
-        @Override
-        public void onFailed() {
-            downloadTask = null;
-            //下载成功将前台服务通知关闭，并创建一个下载失败的通知
-            stopForeground(true);
-            getNotificationManager().notify(1, setNotification("下载失败", -1));
-            Toast.makeText(DownloadService.this, "下载失败，请重试", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onPaused() {
-            downloadTask = null;
-            Toast.makeText(DownloadService.this, "Paused", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onCanceled() {
-            downloadTask = null;
-            stopForeground(true);
-        }
-    };
-
-    public class DownloadBinder extends Binder {
-        public void startDownload(String url) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-
-                }
-            }).start();
-            if (downloadTask == null) {
-                downloadUrl = url;
-                downloadTask = new DownloadTask(listener);
-                downloadTask.execute(downloadUrl);
-                startForeground(1, setNotification("下载中...", 0));
-                Toast.makeText(DownloadService.this, "开始下载", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-
-    private Notification setNotification(String title, int progress) {
-        Intent intent = new Intent(Datas.activity, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
-        builder.setSmallIcon(R.mipmap.ic_launcher);
-        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.sign));
-        builder.setContentIntent(pendingIntent);
-        builder.setContentTitle(title);
-        builder.setPriority(NotificationCompat.PRIORITY_HIGH);
-        if (progress > 0) {
-            builder.setContentText(progress + "%");
-            builder.setProgress(100, progress, false);//三个参数，最大进度，当前进度，是否使用模糊进度条
-        }
-        return builder.build();
-    }
-
-    private NotificationManager getNotificationManager() {
-        return (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        Utils.getMainActivity().startActivity(intent);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        notificationManager.cancelAll();
 //        unbindService(connection);
+    }
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
     }
 }

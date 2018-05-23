@@ -34,18 +34,13 @@ import okhttp3.Response;
  */
 
 public class MQTTManager {
-    private Activity activity;
-    private Context context;
     private MqttConnectOptions mqttOptions;
     private MqttClient mqttClient;
     private String clientId;
     private String applyForMqttAccountURL = "http://bus.mysdnu.cn/bus/mqtt";
     private String linkMqttURL = "tcp://bus.mysdnu.cn:1880";
 
-    public MQTTManager(Context context, Activity activity) {
-        this.context = context;
-        this.activity = activity;
-
+    public MQTTManager() {
         mqttOptions = new MqttConnectOptions();
         mqttOptions.setCleanSession(true);
         mqttOptions.setConnectionTimeout(20);//超时时间20s
@@ -63,14 +58,14 @@ public class MQTTManager {
             mqttClient = new MqttClient(linkMqttURL, clientId, new MemoryPersistence());
         } catch (MqttException e) {
             e.printStackTrace();
-            Toast.makeText(activity, "Mqtt连接创建失败", Toast.LENGTH_SHORT).show();
+            Utils.uiToast("Mqtt连接创建失败");
         }
     }
 
     /* 连接MQTT服务器 */
     public synchronized void linkMQTT(MqttCallback mqttCallback) {
         if (mqttClient.isConnected()) {
-            uiToast("服务器已连接");
+            Utils.uiToast("服务器已连接");
             //TODO:isConnected总是返回false
             return;
         }
@@ -96,11 +91,11 @@ public class MQTTManager {
                     Log.e("MqttLink","NoError");
                 } catch (Exception e) {
                     e.printStackTrace();
-                    uiToast("连接服务器失败");
+                    Utils.uiToast("连接服务器失败");
                 }
             }
         }catch (SocketTimeoutException e){
-            uiToast("连接超时，请检查网络设置");
+            Utils.uiToast("连接超时，请检查网络设置");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -120,7 +115,7 @@ public class MQTTManager {
     public MqttCallback mqttCallback = new MqttCallback() {
         @Override
         public void connectionLost(Throwable cause) {
-            uiToast("连接失败，请刷新重试");
+            Utils.uiToast("连接失败，请刷新重试");
             Log.e("MqttConnectionLost",cause.getMessage());
         }
 
@@ -157,19 +152,6 @@ public class MQTTManager {
             } catch (MqttException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    private void uiToast(final String text) {
-        try {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
