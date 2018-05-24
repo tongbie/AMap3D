@@ -19,8 +19,6 @@ import okhttp3.OkHttpClient;
 
 public class Utils {
 
-    public static String pathName = "SchoolBusQuery";
-
     private static Activity mainActivity;
     private static Context appCompatContext;
 

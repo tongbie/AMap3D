@@ -7,6 +7,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
+import android.net.LocalServerSocket;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -30,31 +31,30 @@ import okhttp3.Call;
 import okhttp3.Request;
 import okhttp3.Response;
 
-//TODO: 8.0Notification适配，Toast去除，下载异常通知
+//TODO: 8.0Notification适配，service多例，文件改名
 public class DownloadService extends Service {
     private static NotificationManager notificationManager;
-    private boolean isFirstCommand = true;
+    private static boolean isFirstCommand = true;
     private PowerManager.WakeLock wakeLock = null;
-    private static Thread thread;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (isFirstCommand) {
             notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             requireWakeLock();
+            if (!isApkExist()) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        downloadApk();
+                    }
+                }).start();
+            }
         }
         if (intent == null) {
             notificationManager.cancelAll();
         }
-        if (!isApkExist() || thread == null) {
-            thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    downloadApk();
-                }
-            });
-            thread.start();
-        }
+
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -185,11 +185,6 @@ public class DownloadService extends Service {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
         startActivity(intent);
-    }
-
-    @Override
-    public void onDestroy() {
-        destroyService();
     }
 
     @Nullable

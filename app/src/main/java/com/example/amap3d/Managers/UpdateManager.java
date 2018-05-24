@@ -20,8 +20,10 @@ import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.widget.Toast;
 
+import com.example.amap3d.Datas;
 import com.example.amap3d.Gsons.ApkVersionGson;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.R;
@@ -127,9 +129,10 @@ public class UpdateManager {
     }
 
     private void showUpdataDialog(final boolean isForceUpdate) {
-//        if(isServiceWorking(Utils.getApplicationContext(),"com.example.amap3d.Services.DownloadService")){
-//            return;
-//        }
+        if(isServiceWorking(Utils.getApplicationContext(),"com.example.amap3d.Services.DownloadService")){
+            Utils.uiToast("更新下载中...");
+            return;
+        }
         final AlertDialog.Builder builer = new AlertDialog.Builder(Utils.getMainActivity());
         builer.setTitle(isForceUpdate ? "有必须的更新" : "有可用的更新");
         builer.setCancelable(!isForceUpdate);
@@ -167,6 +170,7 @@ public class UpdateManager {
         }
         for (int i = 0; i < runningServiceInfoList.size(); i++) {
             String mName = runningServiceInfoList.get(i).service.getClassName().toString();
+            Log.e("Service",mName);
             if (mName.equals(serviceName)) {
                 isWork = true;
                 break;
