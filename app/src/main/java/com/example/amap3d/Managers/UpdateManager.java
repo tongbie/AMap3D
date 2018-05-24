@@ -1,6 +1,7 @@
 package com.example.amap3d.Managers;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -31,6 +32,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import okhttp3.Call;
 import okhttp3.Request;
@@ -51,7 +53,7 @@ public class UpdateManager {
     private static String versionCodeURL = "http://bus.mysdnu.cn/android/update/:type";
 
     public static String downloadApkURL = "http://bus.mysdnu.cn/android/latest/:type";
-    public static String downloadPathName ="SchoolBusQuery";
+    public static String downloadPathName = "SchoolBusQuery";
 
     public static final int UPDATE_NOT_NEED = 0;
     public static final int UPDATA_CLIENT = 1;
@@ -123,6 +125,9 @@ public class UpdateManager {
     }
 
     private void showUpdataDialog(final boolean isForceUpdate) {
+        if(isServiceWorking(Utils.getApplicationContext(),"com.example.amap3d.Services.DownloadService")){
+            return;
+        }
         final AlertDialog.Builder builer = new AlertDialog.Builder(Utils.getMainActivity());
         builer.setTitle(isForceUpdate ? "有必须的更新" : "有可用的更新");
         builer.setCancelable(!isForceUpdate);
@@ -151,6 +156,23 @@ public class UpdateManager {
         });
     }
 
+    public boolean isServiceWorking(Context context, String serviceName) {
+        boolean isWork = false;
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> runningServiceInfoList = activityManager.getRunningServices(Integer.MAX_VALUE);
+        if (runningServiceInfoList.size() <= 0) {
+            return false;
+        }
+        for (int i = 0; i < runningServiceInfoList.size(); i++) {
+            String mName = runningServiceInfoList.get(i).service.getClassName().toString();
+            if (mName.equals(serviceName)) {
+                isWork = true;
+                break;
+            }
+        }
+        return isWork;
+    }
+
     private void downloadApkWithService() {
         conn = new ServiceConnection() {
 
@@ -168,6 +190,8 @@ public class UpdateManager {
             @Override
             public void run() {
                 Intent intent = new Intent(Utils.getMainActivity(), DownloadService.class);
+//                intent.setAction(ACTION_START);
+//                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 Utils.getMainActivity().startService(intent);
             }
         });

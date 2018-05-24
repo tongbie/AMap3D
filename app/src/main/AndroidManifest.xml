@@ -20,6 +20,8 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <!-- 允许程序读写手机状态和身份 -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!--锁屏状态下保持唤醒-->
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <application
         android:allowBackup="true"
@@ -71,6 +73,7 @@
 
         <service
             android:name=".Services.DownloadService"
+            android:process="system"
             android:enabled="true"
             android:exported="true"></service>
     </application>
