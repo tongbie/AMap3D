@@ -52,7 +52,9 @@ public class UpdateManager {
     private static String updateDescription;
     private static String versionCodeURL = "http://bus.mysdnu.cn/android/update/:type";
 
-    public static String downloadApkURL = "http://bus.mysdnu.cn/android/latest/:type";
+    public static String downloadApkURL = /*"http://bus.mysdnu.cn/android/latest/:type"*/
+//            "http://p.gdown.baidu.com/62e0fca9e294a883e407f5483c61ca13732e8699c5dea2c4e2d9e8497de01da00ca0c898c5d67e27bacc59ad5fb28ea0c3e065f4be8f6d6d2fb710c111adc8eee16bee2b2d73abc4fde9a2fea3e6231f370c30354e3a6920c5d22207ac464e467b3797ce9e675dd05ec8662f2a267c9883082f66d29b393dce7dbd91232de5019be714d931998d7a46d67da9039bc96544e5e4848967f44841fc8fcf999236e3aa77d9b6f6a2a7fdd4662739dc90fa8b4ed99482a115fa494ce03ebf9de70d81db9b394df69e73e830f33b62b98548f4d67001496904b5f0217146fbed429cb2a52a3cb7fb3d36a3561e04afd206e36d07045414a6b886368bfff40f271403ee4dd4e14dc8d7931044f3395cc765fadea08994ecbaa2b0b6008c955b632dda84307732ca25a576d7c10efec0a1b549b9bf5c43d2dba8f59d59f989eda0e7966727e60d21204626dde77255c83bbc41b378e092d76b554d1b";
+            "http://gdown.baidu.com/data/wisegame/06ed75c9055ec156/baidushoujizhushou_16795029.apk";
     public static String downloadPathName = "SchoolBusQuery";
 
     public static final int UPDATE_NOT_NEED = 0;
@@ -125,9 +127,9 @@ public class UpdateManager {
     }
 
     private void showUpdataDialog(final boolean isForceUpdate) {
-        if(isServiceWorking(Utils.getApplicationContext(),"com.example.amap3d.Services.DownloadService")){
-            return;
-        }
+//        if(isServiceWorking(Utils.getApplicationContext(),"com.example.amap3d.Services.DownloadService")){
+//            return;
+//        }
         final AlertDialog.Builder builer = new AlertDialog.Builder(Utils.getMainActivity());
         builer.setTitle(isForceUpdate ? "有必须的更新" : "有可用的更新");
         builer.setCancelable(!isForceUpdate);

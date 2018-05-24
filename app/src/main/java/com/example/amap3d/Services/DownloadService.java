@@ -15,10 +15,7 @@ import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
-import android.util.Log;
-import android.widget.Toast;
 
-import com.example.amap3d.Datas;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.Managers.UpdateManager;
 import com.example.amap3d.R;
@@ -33,33 +30,38 @@ import okhttp3.Call;
 import okhttp3.Request;
 import okhttp3.Response;
 
+//TODO: 8.0Notification适配，Toast去除，下载异常通知
 public class DownloadService extends Service {
-    private NotificationManager notificationManager;
+    private static NotificationManager notificationManager;
     private boolean isFirstCommand = true;
     private PowerManager.WakeLock wakeLock = null;
+    private static Thread thread;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (isFirstCommand) {
             notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            requireWakeLock();
         }
         if (intent == null) {
             notificationManager.cancelAll();
         }
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                requireWakeLock();
-                downloadApk();
-            }
-        }).start();
+        if (!isApkExist() || thread == null) {
+            thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    downloadApk();
+                }
+            });
+            thread.start();
+        }
         return super.onStartCommand(intent, flags, startId);
     }
 
     private void requireWakeLock() {
         if (null == wakeLock) {
-            PowerManager powerManager = (PowerManager)this.getSystemService(Context.POWER_SERVICE);
-            wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK|PowerManager.ON_AFTER_RELEASE, "PostLocationService");
+            PowerManager powerManager = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+            wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "PostLocationService");
             if (null != wakeLock) {
                 wakeLock.acquire();
             }
@@ -73,11 +75,12 @@ public class DownloadService extends Service {
         }
     }
 
-    private Notification setNotification(int progress) {
+    private Notification setDownloadNotification(int progress) {
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);//避免重复打开activity
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+
         builder.setSmallIcon(R.mipmap.ic_launcher);
         builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.sign));
         builder.setContentIntent(pendingIntent);
@@ -89,9 +92,18 @@ public class DownloadService extends Service {
         return builder.build();
     }
 
+    private boolean isApkExist() {
+        File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.downloadPathName + ".apk");
+        if (file.exists()) {
+            installApk(file);
+            return true;
+        }
+        return false;
+    }
+
     public void downloadApk() {
         if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            Utils.uiToast("SD卡不可用，请检查权限设置");
+//            Utils.uiToast("SD卡不可用，请检查权限设置");
             return;
         }
         Request request = new Request.Builder()
@@ -101,7 +113,7 @@ public class DownloadService extends Service {
 
             @Override
             public void onFailure(Call call, IOException e) {
-                Utils.uiToast("安装包下载失败");
+//                Utils.uiToast("安装包下载失败");
                 call.cancel();
             }
 
@@ -121,12 +133,14 @@ public class DownloadService extends Service {
                         while ((bytesNum = inputStream.read(bytes)) != -1) {
                             fileOutputStream.write(bytes, 0, bytesNum);
                             progress += bytesNum;
-                            notificationManager.notify(10, setNotification((int) (progress * 100 / fileSize)));
+                            notificationManager.notify(10, setDownloadNotification((int) (progress * 100 / fileSize)));
                         }
                         if (file.exists()) {
-                            installApk();
+                            File fullFile = new File(UpdateManager.downloadPathName + ".apk");
+                            file.renameTo(fullFile);
+                            installApk(file);
                         } else {
-                            Utils.uiToast("升级包获取失败");
+//                            Utils.uiToast("升级包获取失败");
                         }
                     }
                     fileOutputStream.flush();
@@ -135,7 +149,7 @@ public class DownloadService extends Service {
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    Utils.uiToast("文件写入失败");
+//                    Utils.uiToast("文件写入失败");
                     return;
                 } finally {
                     try {
@@ -148,33 +162,34 @@ public class DownloadService extends Service {
                     } catch (IOException e) {
 
                     }
+                    destroyService();
                 }
             }
         });
-        notificationManager.cancelAll();
-        cancleWakeLock();
-        stopSelf();
     }
 
-    private void installApk() {
+    private void destroyService() {
+        notificationManager.cancelAll();
+        cancleWakeLock();
+        this.onDestroy();
+    }
+
+    private void installApk(File file) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        File file = new File(Environment.getExternalStorageDirectory(), Utils.pathName);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) { //android N的权限问题
             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            Uri contentUri = FileProvider.getUriForFile(Utils.getMainActivity(), "com.example.amap3d.fileprovider", file);
+            Uri contentUri = FileProvider.getUriForFile(this, "com.example.amap3d.fileprovider", file);
             intent.setDataAndType(contentUri, "application/vnd.android.package-archive");
         } else {
             intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
-        Utils.getMainActivity().startActivity(intent);
+        startActivity(intent);
     }
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
-        notificationManager.cancelAll();
-//        unbindService(connection);
+        destroyService();
     }
 
     @Nullable

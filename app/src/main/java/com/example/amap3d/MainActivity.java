@@ -174,7 +174,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Datas.busInformationMap.clear();
         Datas.busPositionList.clear();
         Datas.busMarkerMap.clear();
-        mqttManager.disconnect();
         isRefreshing = true;
         getAllData();
     }
@@ -216,7 +215,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onDestroy() {
         super.onDestroy();
         AMapManager.mapView.onDestroy();
-        mqttManager.onDestory();
+        mqttManager.disconnect();
         System.exit(0);
     }
 }

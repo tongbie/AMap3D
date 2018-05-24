@@ -39,6 +39,7 @@ public class MQTTManager {
     private String clientId;
     private String applyForMqttAccountURL = "http://bus.mysdnu.cn/bus/mqtt";
     private String linkMqttURL = "tcp://bus.mysdnu.cn:1880";
+    private String mqttTopic="BusMoveList";
 
     public MQTTManager() {
         mqttOptions = new MqttConnectOptions();
@@ -66,7 +67,6 @@ public class MQTTManager {
     public synchronized void linkMQTT(MqttCallback mqttCallback) {
         if (mqttClient.isConnected()) {
             Utils.uiToast("服务器已连接");
-            //TODO:isConnected总是返回false
             return;
         }
         try {
@@ -87,8 +87,7 @@ public class MQTTManager {
                     mqttClient = new MqttClient(linkMqttURL, clientId, new MemoryPersistence());
                     mqttClient.setCallback(mqttCallback);
                     mqttClient.connect(mqttOptions);
-                    subscribeMqttTopic("BusMoveList", 0);
-                    Log.e("MqttLink","NoError");
+                    subscribeMqttTopic(mqttTopic, 0);
                 } catch (Exception e) {
                     e.printStackTrace();
                     Utils.uiToast("连接服务器失败");
@@ -152,14 +151,6 @@ public class MQTTManager {
             } catch (MqttException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    public void onDestory(){
-        try {
-            mqttClient.disconnect();
-        } catch (MqttException e) {
-            e.printStackTrace();
         }
     }
 }
