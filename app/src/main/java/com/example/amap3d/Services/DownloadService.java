@@ -1,13 +1,13 @@
 package com.example.amap3d.Services;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
-import android.net.LocalServerSocket;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -23,6 +23,8 @@ import com.example.amap3d.R;
 import com.example.amap3d.Utils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,22 +42,20 @@ public class DownloadService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (isFirstCommand) {
-            notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            initNotificationManager();
             requireWakeLock();
-            if (!isApkExist()) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        downloadApk();
-                    }
-                }).start();
-            }
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    downloadApk();
+                }
+            }).start();
         }
         if (intent == null) {
             notificationManager.cancelAll();
         }
-
-        return super.onStartCommand(intent, flags, startId);
+//        return super.onStartCommand(intent, flags, startId);
+        return START_NOT_STICKY;
     }
 
     private void requireWakeLock() {
@@ -79,8 +79,7 @@ public class DownloadService extends Service {
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);//避免重复打开activity
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
-
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default");
         builder.setSmallIcon(R.mipmap.ic_launcher);
         builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.sign));
         builder.setContentIntent(pendingIntent);
@@ -92,18 +91,57 @@ public class DownloadService extends Service {
         return builder.build();
     }
 
-    private boolean isApkExist() {
-        File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.downloadPathName + ".apk");
-        if (file.exists()) {
-            installApk(file);
-            return true;
+    private boolean isApkExist(long fileSize) {
+        boolean isExist = false;
+        File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.downloadPathName);
+        FileInputStream fileInputStream = null;
+        try {
+            fileInputStream = new FileInputStream(file);
+            long localFileSize = fileInputStream.available();
+            if (localFileSize == fileSize) {
+                installApk(file);
+                isExist = true;
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (fileInputStream != null) {
+                    fileInputStream.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        return false;
+        return isExist;
+    }
+
+    private void initNotificationManager(){
+        notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            String channelID = "1";
+            String channelName = "channelName";
+            NotificationChannel channel = new NotificationChannel(channelID, channelName, NotificationManager.IMPORTANCE_HIGH);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    private void showFailNotifacation(String text) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        builder.setSmallIcon(R.mipmap.ic_launcher);
+        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.sign));
+        builder.setContentTitle("下载失败");
+        builder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        builder.setContentText(text);
+        notificationManager.notify(20, builder.build());
     }
 
     public void downloadApk() {
         if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-//            Utils.uiToast("SD卡不可用，请检查权限设置");
+            showFailNotifacation("SD卡不可用，请检查权限设置");
+            destroyService();
             return;
         }
         Request request = new Request.Builder()
@@ -113,8 +151,9 @@ public class DownloadService extends Service {
 
             @Override
             public void onFailure(Call call, IOException e) {
-//                Utils.uiToast("安装包下载失败");
                 call.cancel();
+                showFailNotifacation("网络异常，请检查网络设置");
+                destroyService();
             }
 
             @Override
@@ -122,9 +161,9 @@ public class DownloadService extends Service {
                 InputStream inputStream = null;
                 FileOutputStream fileOutputStream = null;
                 try {
-                    inputStream = response.body().byteStream();//获取输入流
-                    long fileSize = response.body().contentLength();//获取文件大小
-                    if (inputStream != null) {
+                    inputStream = response.body().byteStream();
+                    long fileSize = response.body().contentLength();
+                    if (!isApkExist(fileSize) && inputStream != null) {
                         File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.downloadPathName);
                         fileOutputStream = new FileOutputStream(file);
                         byte[] bytes = new byte[1024];
@@ -136,31 +175,25 @@ public class DownloadService extends Service {
                             notificationManager.notify(10, setDownloadNotification((int) (progress * 100 / fileSize)));
                         }
                         if (file.exists()) {
-                            File fullFile = new File(UpdateManager.downloadPathName + ".apk");
-                            file.renameTo(fullFile);
                             installApk(file);
                         } else {
-//                            Utils.uiToast("升级包获取失败");
+                            showFailNotifacation("升级包获取失败");
                         }
-                    }
-                    fileOutputStream.flush();
-                    if (fileOutputStream != null) {
-                        fileOutputStream.close();
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-//                    Utils.uiToast("文件写入失败");
-                    return;
+                    showFailNotifacation("连接超时，请检查网络设置");
                 } finally {
                     try {
                         if (inputStream != null) {
                             inputStream.close();
                         }
                         if (fileOutputStream != null) {
+                            fileOutputStream.flush();
                             fileOutputStream.close();
                         }
                     } catch (IOException e) {
-
+                        e.printStackTrace();
                     }
                     destroyService();
                 }
@@ -169,9 +202,9 @@ public class DownloadService extends Service {
     }
 
     private void destroyService() {
-        notificationManager.cancelAll();
+        notificationManager.cancel(10);
         cancleWakeLock();
-        this.onDestroy();
+        this.stopSelf();
     }
 
     private void installApk(File file) {

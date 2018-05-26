@@ -3,13 +3,11 @@ package com.example.amap3d;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
-import android.support.design.widget.AppBarLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.PopupMenu;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.amap3d.BusTimetable.BusTimetableActivity;
@@ -80,19 +78,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 //        final CoordinatorLayout coordinatorLayout = findViewById(R.id.coordinatorLayout);
 //        final NestedScrollView nestedScrollView = findViewById(R.id.nestedScrollView);
-        final TextView upwardSlideTextView = findViewById(R.id.upTextView);
-        final TextView downwardSlideTextView = findViewById(R.id.downTextView);
-        ((AppBarLayout) findViewById(R.id.appBarLayout)).addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
-            @Override
-            public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
-                if (verticalOffset < 0) {
-                    upwardSlideTextView.setText("下拉返回");
-                    downwardSlideTextView.setVisibility(View.GONE);
-                } else if (verticalOffset == 0) {
-                    upwardSlideTextView.setText("上滑查看发车时间");
-                }
-            }
-        });
+//        final TextView upwardSlideTextView = findViewById(R.id.upTextView);
+//        final TextView downwardSlideTextView = findViewById(R.id.downTextView);
+//        ((AppBarLayout) findViewById(R.id.appBarLayout)).addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
+//            @Override
+//            public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
+//                if (verticalOffset < 0) {
+//                    upwardSlideTextView.setText("下拉返回");
+//                    downwardSlideTextView.setVisibility(View.GONE);
+//                } else if (verticalOffset == 0) {
+//                    upwardSlideTextView.setText("上滑查看发车时间");
+//                }
+//            }
+//        });
         initPopupMenu();
     }
 
@@ -111,7 +109,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public boolean onMenuItemClick(MenuItem item) {
                 switch (item.getItemId()) {
                     case R.id.timeTable:
-                        startActivity(new Intent(MainActivity.this, BusTimetableActivity.class));
+//                        startActivity(new Intent(MainActivity.this, BusTimetableActivity.class));
+                        Toast.makeText(MainActivity.this, "功能开发中，敬请期待", Toast.LENGTH_SHORT).show();
                         break;
                     case R.id.upDate:
                         update("已是最新版本");
@@ -214,8 +213,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        AMapManager.mapView.onDestroy();
-        mqttManager.disconnect();
+        aMapManager.destroy();
+        mqttManager.destroy();
         System.exit(0);
     }
 }

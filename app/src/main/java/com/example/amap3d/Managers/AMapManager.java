@@ -227,4 +227,8 @@ public class AMapManager {
         aMap.setInfoWindowAdapter(infoWindowAdapter);
         aMap.setOnInfoWindowClickListener(infoWindowClickListener);
     }
+
+    public void destroy(){
+        mapView.onDestroy();
+    }
 }

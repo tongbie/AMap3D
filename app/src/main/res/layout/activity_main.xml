@@ -8,16 +8,16 @@
     android:orientation="vertical"
     tools:context="com.example.amap3d.MainActivity">
 
-    <android.support.design.widget.AppBarLayout
-        android:id="@+id/appBarLayout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+    <!--<android.support.design.widget.AppBarLayout-->
+        <!--android:id="@+id/appBarLayout"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent">-->
 
-        <android.support.design.widget.CollapsingToolbarLayout
-            android:id="@+id/collapsingToolbarLayout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:layout_scrollFlags="scroll|exitUntilCollapsed|snap">
+        <!--<android.support.design.widget.CollapsingToolbarLayout-->
+            <!--android:id="@+id/collapsingToolbarLayout"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--app:layout_scrollFlags="scroll|exitUntilCollapsed|snap">-->
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -50,45 +50,45 @@
                         android:layout_marginLeft="8dp" />
                 </FrameLayout>
 
-                <TextView
-                    android:id="@+id/upTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="30dp"
-                    android:background="#808080"
-                    android:gravity="center"
-                    android:text="上滑查看发车时间"
-                    android:textColor="#FFFFFF"></TextView>
+                <!--<TextView-->
+                    <!--android:id="@+id/upTextView"-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="30dp"-->
+                    <!--android:background="#808080"-->
+                    <!--android:gravity="center"-->
+                    <!--android:text="上滑查看发车时间"-->
+                    <!--android:textColor="#FFFFFF"></TextView>-->
             </LinearLayout>
-        </android.support.design.widget.CollapsingToolbarLayout>
-    </android.support.design.widget.AppBarLayout>
+        <!--</android.support.design.widget.CollapsingToolbarLayout>-->
+    <!--</android.support.design.widget.AppBarLayout>-->
 
-    <android.support.v4.widget.NestedScrollView
-        android:id="@+id/nestedScrollView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:overScrollMode="always"
-        android:background="#E2EEEA"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+    <!--<android.support.v4.widget.NestedScrollView-->
+        <!--android:id="@+id/nestedScrollView"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:fillViewport="true"-->
+        <!--android:overScrollMode="always"-->
+        <!--android:background="#E2EEEA"-->
+        <!--app:layout_behavior="@string/appbar_scrolling_view_behavior">-->
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+        <!--<LinearLayout-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--android:orientation="vertical">-->
 
-            <TextView
-                android:id="@+id/downTextView"
-                android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:gravity="center"
-                android:text="下拉返回"
-                android:background="#808080"
-                android:textColor="#FFFFFF" />
+            <!--<TextView-->
+                <!--android:id="@+id/downTextView"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="30dp"-->
+                <!--android:gravity="center"-->
+                <!--android:text="下拉返回"-->
+                <!--android:background="#808080"-->
+                <!--android:textColor="#FFFFFF" />-->
 
-            <ListView
-                android:id="@+id/listView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"></ListView>
-        </LinearLayout>
-    </android.support.v4.widget.NestedScrollView>
+            <!--<ListView-->
+                <!--android:id="@+id/listView"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="match_parent"></ListView>-->
+        <!--</LinearLayout>-->
+    <!--</android.support.v4.widget.NestedScrollView>-->
 </android.support.design.widget.CoordinatorLayout>

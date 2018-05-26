@@ -153,4 +153,8 @@ public class MQTTManager {
             }
         }
     }
+
+    public void destroy(){
+        disconnect();
+    }
 }

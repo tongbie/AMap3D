@@ -14,7 +14,7 @@ public class ApkVersionGson {
     private String type;
 
     public String getId() {
-        return id;
+        return id==null?"":id;
     }
 
     public void setId(String id) {
@@ -22,7 +22,7 @@ public class ApkVersionGson {
     }
 
     public String getUpdateTime() {
-        return updateTime;
+        return updateTime==null?"":updateTime;
     }
 
     public void setUpdateTime(String updateTime) {
@@ -30,7 +30,7 @@ public class ApkVersionGson {
     }
 
     public String getPackageVersionName() {
-        return packageVersionName;
+        return packageVersionName==null?"":packageVersionName;
     }
 
     public void setPackageVersionName(String packageVersionName) {
@@ -49,7 +49,7 @@ public class ApkVersionGson {
     }
 
     public String getDescription() {
-        return description;
+        return description==null?"":description;
     }
 
     public void setDescription(String description) {
@@ -68,7 +68,7 @@ public class ApkVersionGson {
     }
 
     public String getType() {
-        return type;
+        return type==null?"":type;
     }
 
     public void setType(String type) {
