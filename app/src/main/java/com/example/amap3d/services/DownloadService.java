@@ -17,6 +17,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
 
+import com.example.amap3d.BuildConfig;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.managers.UpdateManager;
 import com.example.amap3d.R;
@@ -221,7 +222,7 @@ public class DownloadService extends Service {
         Intent intent = new Intent(Intent.ACTION_VIEW);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) { //android N的权限问题
             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            Uri contentUri = FileProvider.getUriForFile(this, "com.example.amap3d.fileprovider", file);
+            Uri contentUri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".fileProvider", file);
             intent.setDataAndType(contentUri, "application/vnd.android.package-archive");
         } else {
             intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");

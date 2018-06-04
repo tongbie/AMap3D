@@ -5,6 +5,8 @@ android {
         别同 {
             keyAlias 'build'
             keyPassword 'bt19971118'
+            storeFile file('amap3d.keystore')
+            storePassword 'bt19971118'
         }
     }
     compileSdkVersion 26
@@ -22,18 +24,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.别同
         }
-        buildType {
-        }
         debug {
-            applicationIdSuffix '.debug' //增加包名后缀
+            applicationIdSuffix '.debug'
         }
     }
 }
-
-//lintOptions { //这句话一定要加上，不然会有error
-//    checkReleaseBuilds false
-//    abortOnError false; //打包时lint错误是否报错
-//}
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')

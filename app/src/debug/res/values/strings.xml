@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">校车查询（测试版）</string>
+    <string name="package_name">com.example.amap3d.debug</string>
+    <string name="file_provider">com.example.amap3d.debug.fileprovider</string>
+    <string name="amap_key">ffeb5268aaac981ed8fa85ed118a1219</string>
+</resources>

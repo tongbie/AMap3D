@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.amap3d">
 
+    <uses-permission android:name="getui.permission.GetuiService.${applicationId}" />
+
     <!-- 用于进行网络定位 -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- 用于获取运营商信息，用于支持提供运营商信息相关的接口 -->
@@ -42,7 +44,7 @@
 
         <meta-data
             android:name="com.amap.api.v2.apikey"
-            android:value="7ce4d89cf298ce078b225f18f5331ea7" />
+            android:value="@string/amap_key" />
 
         <activity
             android:name=".WelcomeActivity"
@@ -65,7 +67,7 @@
 
         <provider
             android:name="android.support.v4.content.FileProvider"
-            android:authorities="com.example.amap3d.fileprovider"
+            android:authorities="${applicationId}.fileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
