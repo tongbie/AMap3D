@@ -1,4 +1,4 @@
-package com.example.amap3d.Services;
+package com.example.amap3d.services;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -18,7 +18,7 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
 
 import com.example.amap3d.MainActivity;
-import com.example.amap3d.Managers.UpdateManager;
+import com.example.amap3d.managers.UpdateManager;
 import com.example.amap3d.R;
 import com.example.amap3d.Utils;
 
@@ -33,11 +33,14 @@ import okhttp3.Call;
 import okhttp3.Request;
 import okhttp3.Response;
 
-//TODO: 8.0Notification适配，service多例，文件改名
 public class DownloadService extends Service {
     private static NotificationManager notificationManager;
     private static boolean isFirstCommand = true;
     private PowerManager.WakeLock wakeLock = null;
+    private String channelId = "1";
+    private int downloadNotificationId = 10;
+    private String downloadNotificationTag = "tag";
+    private NotificationCompat.Builder builder = null;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -54,7 +57,6 @@ public class DownloadService extends Service {
         if (intent == null) {
             notificationManager.cancelAll();
         }
-//        return super.onStartCommand(intent, flags, startId);
         return START_NOT_STICKY;
     }
 
@@ -76,16 +78,18 @@ public class DownloadService extends Service {
     }
 
     private Notification setDownloadNotification(int progress) {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);//避免重复打开activity
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default");
-        builder.setSmallIcon(R.mipmap.ic_launcher);
-        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.sign));
-        builder.setContentIntent(pendingIntent);
-        builder.setContentTitle("校车查询（更新下载中）");
-        builder.setOngoing(true);
-        builder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        if (builder == null) {
+            builder = new NotificationCompat.Builder(this, channelId);
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);//避免重复打开activity
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+            builder.setSmallIcon(R.mipmap.ic_launcher);
+            builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.sign));
+            builder.setContentIntent(pendingIntent);
+            builder.setContentTitle("校车查询（更新下载中）");
+            builder.setOngoing(true);
+            builder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        }
         builder.setContentText((progress > 0 ? progress : 0) + "%");
         builder.setProgress(100, progress, false);
         return builder.build();
@@ -93,7 +97,7 @@ public class DownloadService extends Service {
 
     private boolean isApkExist(long fileSize) {
         boolean isExist = false;
-        File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.downloadPathName);
+        File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.downloadFileName);
         FileInputStream fileInputStream = null;
         try {
             fileInputStream = new FileInputStream(file);
@@ -118,18 +122,17 @@ public class DownloadService extends Service {
         return isExist;
     }
 
-    private void initNotificationManager(){
+    private void initNotificationManager() {
         notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            String channelID = "1";
             String channelName = "channelName";
-            NotificationChannel channel = new NotificationChannel(channelID, channelName, NotificationManager.IMPORTANCE_HIGH);
+            NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW);
             notificationManager.createNotificationChannel(channel);
         }
     }
 
     private void showFailNotifacation(String text) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId);
         builder.setSmallIcon(R.mipmap.ic_launcher);
         builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.sign));
         builder.setContentTitle("下载失败");
@@ -164,16 +167,23 @@ public class DownloadService extends Service {
                     inputStream = response.body().byteStream();
                     long fileSize = response.body().contentLength();
                     if (!isApkExist(fileSize) && inputStream != null) {
-                        File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.downloadPathName);
+                        File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.downloadFileName);
                         fileOutputStream = new FileOutputStream(file);
                         byte[] bytes = new byte[1024];
-                        int bytesNum = -1;
-                        int progress = 0;
+                        int bytesNum;
+                        int allBytes = 0;
+                        int progress ;
+                        int progressListener = 0;
                         while ((bytesNum = inputStream.read(bytes)) != -1) {
                             fileOutputStream.write(bytes, 0, bytesNum);
-                            progress += bytesNum;
-                            notificationManager.notify(10, setDownloadNotification((int) (progress * 100 / fileSize)));
+                            allBytes += bytesNum;
+                            progress = (int) (allBytes * 100 / fileSize);
+                            if (progress > progressListener) {
+                                notificationManager.notify(downloadNotificationTag, downloadNotificationId, setDownloadNotification(progress));
+                                progressListener = progress;
+                            }
                         }
+                        notificationManager.notify(downloadNotificationTag, downloadNotificationId, setDownloadNotification(100));
                         if (file.exists()) {
                             installApk(file);
                         } else {
@@ -202,7 +212,7 @@ public class DownloadService extends Service {
     }
 
     private void destroyService() {
-        notificationManager.cancel(10);
+        notificationManager.cancel(downloadNotificationTag, downloadNotificationId);
         cancleWakeLock();
         this.stopSelf();
     }

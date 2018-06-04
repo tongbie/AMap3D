@@ -1,4 +1,4 @@
-package com.example.amap3d.Managers;
+package com.example.amap3d.managers;
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -6,10 +6,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.v7.app.AlertDialog;
-import android.util.Log;
 
-import com.example.amap3d.Gsons.ApkVersionGson;
-import com.example.amap3d.Services.DownloadService;
+import com.example.amap3d.gsons.ApkVersionGson;
+import com.example.amap3d.services.DownloadService;
 import com.example.amap3d.Utils;
 
 import java.util.List;
@@ -23,10 +22,10 @@ import okhttp3.Response;
 
 public class UpdateManager {
     private static String updateDescription;
-    private static final String versionCodeURL = "http://bus.mysdnu.cn/android/update/:type";
+    private static final String versionCodeURL = "http://bus.mysdnu.cn/android/update/alpha";
 
-    public static final String downloadApkURL = "http://bus.mysdnu.cn/android/latest/:type";
-    public static final String downloadPathName = "SchoolBusQuery";
+    public static String downloadApkURL = "http://bus.mysdnu.cn/android/latest/alpha";
+    public static final String downloadFileName = "SchoolBusQuery.apk";
 
     public static final int UPDATE_NOT_NEED = 0;
     public static final int UPDATA_CLIENT = 1;
@@ -57,6 +56,8 @@ public class UpdateManager {
                 if (minVersionCode == -404 || packageVersionCode == -404) {
                     return UPDATE_SERVICE_VERSION_ERROR;
                 }
+//                String updateType = apkVersionGson.getType();
+//                updateState = updateType.equals("alpha") ? "alpha" : "stable";
                 //TODO:updateType
                 if (versionCode < minVersionCode /*|| updateType.equals("updateType")*/) {
                     versionState[0] = UPDATE_FORCE;
@@ -138,7 +139,7 @@ public class UpdateManager {
         }
         for (int i = 0; i < runningServiceInfoList.size(); i++) {
             String mName = runningServiceInfoList.get(i).service.getClassName().toString();
-            Log.e("Service", mName);
+//            Log.e("Service", mName);
             if (mName.equals(serviceName)) {
                 isWork = true;
                 break;
@@ -148,6 +149,7 @@ public class UpdateManager {
     }
 
     private void downloadApkWithService() {
+        Utils.uiToast("开始下载");
         Utils.getMainActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {

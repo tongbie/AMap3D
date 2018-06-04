@@ -22,6 +22,8 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <!--锁屏状态下保持唤醒-->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!--允许安装应用-->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
     <application
         android:allowBackup="true"
@@ -53,11 +55,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".BusTimetable.BusTimetableActivity"
+            android:name=".bustimetable.BusTimetableActivity"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
         <activity
-            android:name=".Views.DialogActivity"
+            android:name=".views.DialogActivity"
             android:label="有可用的更新"
             android:theme="@style/DialogTheme" />
 
@@ -72,7 +74,7 @@
         </provider>
 
         <service
-            android:name=".Services.DownloadService"
+            android:name=".services.DownloadService"
             android:process="system"
             android:enabled="true"
             android:exported="true"></service>

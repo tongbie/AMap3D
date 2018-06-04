@@ -29,20 +29,20 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1">
 
-                    <com.example.amap3d.Views.MapViewContainerView
+                    <com.example.amap3d.views.MapViewContainerView
                         android:id="@+id/mapViewContainerView"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"></com.example.amap3d.Views.MapViewContainerView>
+                        android:layout_height="match_parent"></com.example.amap3d.views.MapViewContainerView>
 
-                    <com.example.amap3d.Views.RefreshButton
-                        android:id="@+id/refresh"
+                    <com.example.amap3d.views.RefreshButton
+                        android:id="@+id/refreshButton"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:layout_marginLeft="8dp"
                         android:layout_marginTop="8dp" />
 
-                    <com.example.amap3d.Views.MenuButton
-                        android:id="@+id/menu"
+                    <com.example.amap3d.views.MenuButton
+                        android:id="@+id/menuButton"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:layout_gravity="bottom|left"

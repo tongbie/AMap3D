@@ -1,16 +1,13 @@
-package com.example.amap3d.Managers;
+package com.example.amap3d.managers;
 
-import android.app.Activity;
-import android.content.Context;
 import android.os.Build;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
 import com.example.amap3d.Datas;
-import com.example.amap3d.Gsons.BusMoveGson;
-import com.example.amap3d.Gsons.MQTTAccountGson;
+import com.example.amap3d.gsons.BusMoveGson;
+import com.example.amap3d.gsons.MQTTAccountGson;
 import com.example.amap3d.R;
 import com.example.amap3d.Utils;
 import com.google.gson.reflect.TypeToken;
@@ -39,12 +36,12 @@ public class MQTTManager {
     private String clientId;
     private String applyForMqttAccountURL = "http://bus.mysdnu.cn/bus/mqtt";
     private String linkMqttURL = "tcp://bus.mysdnu.cn:1880";
-    private String mqttTopic="BusMoveList";
+    private String mqttTopic = "BusMoveList";
 
     public MQTTManager() {
         mqttOptions = new MqttConnectOptions();
         mqttOptions.setCleanSession(true);
-        mqttOptions.setConnectionTimeout(20);//超时时间20s
+        mqttOptions.setConnectionTimeout(10);//超时时间20s
         mqttOptions.setKeepAliveInterval(120);//心跳时间，用以服务端判断客户端在线状态
 
         clientId = "35" + Build.BOARD.length() % 10 + Build.BRAND.length() % 10 +
@@ -57,15 +54,15 @@ public class MQTTManager {
 
         try {
             mqttClient = new MqttClient(linkMqttURL, clientId, new MemoryPersistence());
-        } catch (MqttException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            Utils.uiToast("Mqtt连接创建失败");
+            Utils.uiToast("服务器连接失败");
         }
     }
 
     /* 连接MQTT服务器 */
     public synchronized void linkMQTT(MqttCallback mqttCallback) {
-        if (mqttClient.isConnected()) {
+        if (mqttClient != null && mqttClient.isConnected()) {
             Utils.uiToast("服务器已连接");
             return;
         }
@@ -93,7 +90,7 @@ public class MQTTManager {
                     Utils.uiToast("连接服务器失败");
                 }
             }
-        }catch (SocketTimeoutException e){
+        } catch (SocketTimeoutException e) {
             Utils.uiToast("连接超时，请检查网络设置");
         } catch (Exception e) {
             e.printStackTrace();
@@ -115,7 +112,7 @@ public class MQTTManager {
         @Override
         public void connectionLost(Throwable cause) {
             Utils.uiToast("连接失败，请刷新重试");
-            Log.e("MqttConnectionLost",cause.getMessage());
+            Log.e("MqttConnectionLost", cause.getMessage());
         }
 
         @Override
@@ -132,6 +129,7 @@ public class MQTTManager {
                     Datas.busMarkerMap.get(key).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
                     AMapManager.moveMarker(AMapManager.aMap, new LatLng[]{new LatLng(lat, lng), Datas.busMarkerMap.get(key).getPosition()}, key);
                 }
+                Log.e("messageArrived", Datas.busMarkerMap.toString());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -154,7 +152,7 @@ public class MQTTManager {
         }
     }
 
-    public void destroy(){
+    public void destroy() {
         disconnect();
     }
 }

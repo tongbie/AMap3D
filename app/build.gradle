@@ -13,7 +13,7 @@ android {
         minSdkVersion 20
         targetSdkVersion 26
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -24,8 +24,16 @@ android {
         }
         buildType {
         }
+        debug {
+            applicationIdSuffix '.debug' //增加包名后缀
+        }
     }
 }
+
+//lintOptions { //这句话一定要加上，不然会有error
+//    checkReleaseBuilds false
+//    abortOnError false; //打包时lint错误是否报错
+//}
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
@@ -40,5 +48,4 @@ dependencies {
     compile 'com.google.code.gson:gson:2.7'
     compile 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.1.0'
     compile 'com.android.support:design:26.1.0'
-    //    compile 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.0'
 }

@@ -1,4 +1,4 @@
-package com.example.amap3d.BusTimetable;
+package com.example.amap3d.bustimetable;
 
 import android.content.Context;
 import android.support.annotation.Nullable;

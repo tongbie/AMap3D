@@ -1,4 +1,4 @@
-package com.example.amap3d.Views;
+package com.example.amap3d.views;
 
 import android.content.Context;
 import android.graphics.Canvas;

@@ -1,8 +1,6 @@
-package com.example.amap3d.Managers;
+package com.example.amap3d.managers;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -13,12 +11,10 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.CameraUpdateFactory;
@@ -31,20 +27,12 @@ import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
 import com.example.amap3d.Datas;
-import com.example.amap3d.Gsons.BusDataGson;
-import com.example.amap3d.Gsons.BusPositionGson;
+import com.example.amap3d.gsons.BusPositionGson;
 import com.example.amap3d.R;
 import com.example.amap3d.Utils;
-import com.example.amap3d.Views.MapViewContainerView;
-import com.google.gson.reflect.TypeToken;
+import com.example.amap3d.views.MapViewContainerView;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.regex.Pattern;
-
-import okhttp3.Request;
-import okhttp3.Response;
 
 /**
  * Created by BieTong on 2018/3/20.
@@ -53,17 +41,10 @@ import okhttp3.Response;
 public class AMapManager {
     public static AMap aMap;
     public static MapView mapView;
-    private Context context;
-    private Activity activity;
-
-    public AMapManager(Context context, Activity activity) {
-        this.context = context;
-        this.activity = activity;
-    }
 
     public void initMapView(Bundle savedInstanceState) {
-        AMapManager.mapView = new MapView(context);
-        ((MapViewContainerView) activity.findViewById(R.id.mapViewContainerView)).addView(AMapManager.mapView);
+        AMapManager.mapView = new MapView(Utils.getMainActivity());
+        ((MapViewContainerView) Utils.getMainActivity().findViewById(R.id.mapViewContainerView)).addView(AMapManager.mapView);
         AMapManager.mapView.onCreate(savedInstanceState);
     }
 
@@ -99,7 +80,7 @@ public class AMapManager {
         @Override
         public View getInfoContents(Marker marker) {
             if (infoWindow == null) {
-                infoWindow = LayoutInflater.from(context).inflate(
+                infoWindow = LayoutInflater.from(Utils.getApplicationContext()).inflate(
                         R.layout.infowindow, null);
             }
             ((TextView) infoWindow.findViewById(R.id.text)).setText(marker.getTitle());
@@ -123,17 +104,17 @@ public class AMapManager {
                     return;
                 }
             }
-            AlertDialog dialog = new AlertDialog.Builder(activity)
+            AlertDialog dialog = new AlertDialog.Builder(Utils.getMainActivity())
                     .setTitle("拨号")
                     .setMessage("是否拨打 " + num)
                     .setNegativeButton("确定", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            if (ContextCompat.checkSelfPermission(activity, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-                                ActivityCompat.requestPermissions(activity, new String[]{android.Manifest.permission.CALL_PHONE}, 0x003);
+                            if (ContextCompat.checkSelfPermission(Utils.getMainActivity(), Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(Utils.getMainActivity(), new String[]{android.Manifest.permission.CALL_PHONE}, 0x003);
                             } else {
                                 Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + num));
-                                activity.startActivity(intent);
+                                Utils.getMainActivity().startActivity(intent);
                                 dialog.dismiss();
                             }
                         }

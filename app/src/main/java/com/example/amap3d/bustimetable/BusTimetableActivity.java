@@ -1,4 +1,4 @@
-package com.example.amap3d.BusTimetable;
+package com.example.amap3d.bustimetable;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;

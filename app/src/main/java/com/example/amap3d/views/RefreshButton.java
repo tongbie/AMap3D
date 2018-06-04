@@ -1,4 +1,4 @@
-package com.example.amap3d.Views;
+package com.example.amap3d.views;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -9,7 +9,6 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 
 import com.example.amap3d.R;
 

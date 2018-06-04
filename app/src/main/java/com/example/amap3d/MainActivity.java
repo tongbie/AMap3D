@@ -1,36 +1,39 @@
 package com.example.amap3d;
 
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.PopupMenu;
 import android.widget.Toast;
 
-import com.example.amap3d.BusTimetable.BusTimetableActivity;
-import com.example.amap3d.Managers.AMapManager;
-import com.example.amap3d.Managers.BusDataManager;
-import com.example.amap3d.Managers.MQTTManager;
-import com.example.amap3d.Managers.UpdateManager;
-import com.example.amap3d.Views.MenuButton;
-import com.example.amap3d.Views.RefreshButton;
+import com.example.amap3d.managers.AMapManager;
+import com.example.amap3d.managers.BusDataManager;
+import com.example.amap3d.managers.MQTTManager;
+import com.example.amap3d.managers.UpdateManager;
+import com.example.amap3d.views.MenuButton;
+import com.example.amap3d.views.RefreshButton;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private MQTTManager mqttManager;
     private AMapManager aMapManager;
     private BusDataManager busDataManager;
+
     private PopupMenu popupMenu;
+    private RefreshButton refreshButton;
+
+    private boolean isRefreshing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Utils.hideTitleBar(this);
         setContentView(R.layout.activity_main);
-        new Utils(this,getApplicationContext());
+        new Utils(this, getApplicationContext());
         initView();
         aMapManager.initMapView(savedInstanceState);
         if (AMapManager.aMap == null) {
@@ -38,43 +41,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         aMapManager.setAMap(AMapManager.aMap);
         aMapManager.setLocationStyle(AMapManager.aMap);
-        getAllData();
-        update(null);
+        if (isNetworkAvailable()) {
+            getAllData();
+            update(null);
+        }
     }
 
     private void update(final String text) {
-        if (!Utils.checkNetworkState(getApplicationContext())) {
-            Toast.makeText(this, "无网络连接", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                int updateState = UpdateManager.isNeedUpdate(getApplicationContext());
-                if (updateState == UpdateManager.UPDATE_NOT_NEED) {
-                    if (text != null) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(MainActivity.this, text, Toast.LENGTH_SHORT).show();
-                            }
-                        });
+        if (isNetworkAvailable()) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    int updateState = UpdateManager.isNeedUpdate(getApplicationContext());
+                    if (updateState == UpdateManager.UPDATE_NOT_NEED) {
+                        if (text != null) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(MainActivity.this, text, Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                        return;
                     }
-                    return;
+                    UpdateManager updateManager = new UpdateManager();
+                    updateManager.dealWithUpdateState(updateState);
                 }
-                UpdateManager updateManager = new UpdateManager();
-                updateManager.dealWithUpdateState(updateState);
-            }
-        }).start();
+            }).start();
+        }
     }
 
     private void initView() {
         mqttManager = new MQTTManager();
-        aMapManager = new AMapManager(getApplicationContext(), MainActivity.this);
+        aMapManager = new AMapManager();
         busDataManager = new BusDataManager();
 
-        findViewById(R.id.refresh).setOnClickListener(this);
-        findViewById(R.id.menu).setOnClickListener(this);
+        refreshButton = findViewById(R.id.refreshButton);
+        refreshButton.setOnClickListener(this);
+        findViewById(R.id.menuButton).setOnClickListener(this);
 
 //        final CoordinatorLayout coordinatorLayout = findViewById(R.id.coordinatorLayout);
 //        final NestedScrollView nestedScrollView = findViewById(R.id.nestedScrollView);
@@ -95,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void initPopupMenu() {
-        final MenuButton menuButton = findViewById(R.id.menu);
+        final MenuButton menuButton = findViewById(R.id.menuButton);
         popupMenu = new PopupMenu(getApplicationContext(), menuButton);
         popupMenu.getMenuInflater().inflate(R.menu.main, popupMenu.getMenu());
         popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
@@ -122,18 +126,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private synchronized void getAllData() {
-        if (!Utils.checkNetworkState(getApplicationContext())) {
-            Toast.makeText(this, "无网络连接", Toast.LENGTH_SHORT).show();
-            return;
-        }
         new Thread(new Runnable() {
             @Override
             public void run() {
                 busDataManager.setBusInformationToMap();
                 Datas.busPositionList = busDataManager.getBusPosition();
+                Log.e("busPositionList",Datas.busPositionList.toString());
                 aMapManager.addPoints(AMapManager.aMap);
                 mqttManager.linkMQTT(mqttManager.mqttCallback);
-                ((RefreshButton) findViewById(R.id.refresh)).setRefreshing(false);
+                refreshButton.setRefreshing(false);
                 isRefreshing = false;
             }
         }).start();
@@ -142,12 +143,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.refresh:
-                ((RefreshButton) view).setRefreshing(true);
-                Toast.makeText(this, "正在刷新...", Toast.LENGTH_SHORT).show();
-                refresh();
+            case R.id.refreshButton:
+                if (isNetworkAvailable()) {
+                    refreshButton.setRefreshing(true);
+                    Toast.makeText(this, "正在刷新...", Toast.LENGTH_SHORT).show();
+                    refresh();
+                }
                 break;
-            case R.id.menu:
+            case R.id.menuButton:
                 MenuButton menuButton = ((MenuButton) view);
                 if (menuButton.getIsShow() != 1) {
                     menuButton.setIsShow(1);
@@ -159,14 +162,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private boolean isRefreshing = false;
-
     private void refresh() {
         if (isRefreshing) {
-            return;
-        }
-        if (!Utils.checkNetworkState(this)) {
-            Toast.makeText(this, "无网络连接", Toast.LENGTH_SHORT).show();
             return;
         }
         AMapManager.aMap.clear();
@@ -179,6 +176,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
     /*----------------------------------------------------------------------------------------------------------------------------------------------*/
+
+    private boolean isNetworkAvailable() {
+        boolean networkState = true;
+        if (!Utils.checkNetworkState(this)) {
+            Toast.makeText(this, "网络连接不可用", Toast.LENGTH_SHORT).show();
+            networkState = false;
+        }
+        return networkState;
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {

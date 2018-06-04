@@ -1,18 +1,14 @@
-package com.example.amap3d.Managers;
+package com.example.amap3d.managers;
 
-import android.app.Activity;
-import android.content.Context;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.example.amap3d.Datas;
-import com.example.amap3d.Gsons.BusDataGson;
-import com.example.amap3d.Gsons.BusPositionGson;
+import com.example.amap3d.gsons.BusDataGson;
+import com.example.amap3d.gsons.BusPositionGson;
 import com.example.amap3d.Utils;
 import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -46,6 +42,7 @@ public class BusDataManager {
                         String snippet = Pattern.compile("[^0-9]").matcher(busData.getBus_arriveSite()).replaceAll("");
                         Datas.busInformationMap.put(key, new String[]{title, snippet});
                     }
+                    Log.e("busInformationMap",Datas.busInformationMap.toString());
                 } catch (Exception e) {
                     e.printStackTrace();
                     Utils.uiToast("校车信息异常");

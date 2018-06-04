@@ -1,11 +1,7 @@
 package com.example.amap3d;
 
-import android.app.Activity;
-import android.content.Context;
-
-import com.amap.api.maps.AMap;
 import com.amap.api.maps.model.Marker;
-import com.example.amap3d.Gsons.BusPositionGson;
+import com.example.amap3d.gsons.BusPositionGson;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -1,7 +1,4 @@
-package com.example.amap3d.Gsons;
-
-import java.util.ArrayList;
-import java.util.List;
+package com.example.amap3d.gsons;
 
 /**
  * Created by BieTong on 2018/3/15.

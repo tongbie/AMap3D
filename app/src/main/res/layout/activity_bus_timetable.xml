@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="com.example.amap3d.BusTimetable.BusTimetableActivity">
+    tools:context="com.example.amap3d.bustimetable.BusTimetableActivity">
 
     <ListView
         android:layout_width="match_parent"
