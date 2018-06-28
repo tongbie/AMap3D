@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">校车查询</string>
-    <string name="package_name">com.example.amap3d</string>
-    <string name="file_provider">com.example.amap3d.fileprovider</string>
     <string name="amap_key">7ce4d89cf298ce078b225f18f5331ea7</string>
 </resources>
