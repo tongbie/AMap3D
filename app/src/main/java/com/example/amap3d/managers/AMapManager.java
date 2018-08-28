@@ -211,5 +211,8 @@ public class AMapManager {
 
     public void destroy(){
         mapView.onDestroy();
+        mapView = null;
+        aMap.clear();
+        aMap = null;
     }
 }

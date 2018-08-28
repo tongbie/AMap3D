@@ -15,4 +15,10 @@ public class Datas {
     public static HashMap<String, String[]> busInformationMap = new HashMap<>();//校车信息
     public static HashMap<String, Marker> busMarkerMap = new HashMap<>();//校车定位点
     public static List<BusPositionGson> busPositionList = new ArrayList<>();//校车位置
+
+    public static void destroy(){
+        busInformationMap.clear();
+        busMarkerMap.clear();
+        busPositionList.clear();
+    }
 }

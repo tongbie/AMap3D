@@ -1,5 +1,6 @@
 package com.example.amap3d;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -10,6 +11,7 @@ import android.view.View;
 import android.widget.PopupMenu;
 import android.widget.Toast;
 
+import com.example.amap3d.bustimetable.BusTimetableActivity;
 import com.example.amap3d.managers.AMapManager;
 import com.example.amap3d.managers.BusDataManager;
 import com.example.amap3d.managers.MQTTManager;
@@ -113,8 +115,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public boolean onMenuItemClick(MenuItem item) {
                 switch (item.getItemId()) {
                     case R.id.timeTable:
-//                        startActivity(new Intent(MainActivity.this, BusTimetableActivity.class));
-                        Toast.makeText(MainActivity.this, "功能开发中，敬请期待", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(MainActivity.this, BusTimetableActivity.class));
                         break;
                     case R.id.upDate:
                         update("已是最新版本");
@@ -221,6 +222,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onDestroy();
         aMapManager.destroy();
         mqttManager.destroy();
+        Datas.destroy();
         System.exit(0);
     }
 }

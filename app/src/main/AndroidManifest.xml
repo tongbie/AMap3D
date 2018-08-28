@@ -23,9 +23,9 @@
     <!-- 允许程序读写手机状态和身份 -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <!--锁屏状态下保持唤醒-->
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!--允许安装应用-->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
         android:allowBackup="true"
@@ -40,8 +40,10 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
 
+        <!--aMap-->
         <service android:name="com.amap.api.location.APSService" />
 
+        <!--aMap-->
         <meta-data
             android:name="com.amap.api.v2.apikey"
             android:value="@string/amap_key" />
@@ -56,6 +58,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".bustimetable.BusTimetableActivity"
             android:screenOrientation="portrait"
@@ -77,9 +80,9 @@
 
         <service
             android:name=".services.DownloadService"
-            android:process="system"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true"
+            android:process="system"></service>
     </application>
 
 </manifest>
