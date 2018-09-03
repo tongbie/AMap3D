@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.v7.app.AlertDialog;
 
+import com.example.amap3d.MainActivity;
 import com.example.amap3d.gsons.ApkVersionGson;
 import com.example.amap3d.services.DownloadService;
 import com.example.amap3d.Utils;
@@ -21,6 +22,7 @@ import okhttp3.Response;
  */
 
 public class UpdateManager {
+    private static UpdateManager updateManager;
     private static String updateDescription;
     private static final String versionCodeURL = "http://bus.mysdnu.cn/android/update/alpha";
 
@@ -32,6 +34,17 @@ public class UpdateManager {
     public static final int UPDATE_FORCE = 2;
     public static final int UPDATE_LOCAL_VERSION_ERROR = 3;
     public static final int UPDATE_SERVICE_VERSION_ERROR = 4;
+
+    private UpdateManager() {
+
+    }
+
+    public static UpdateManager getInstance() {
+        if (updateManager == null) {
+            updateManager = new UpdateManager();
+        }
+        return updateManager;
+    }
 
     public static int isNeedUpdate(final Context context) {
         final int[] versionState = {0};
@@ -98,11 +111,11 @@ public class UpdateManager {
     }
 
     private void showUpdataDialog(final boolean isForceUpdate) {
-        if (isServiceWorking(Utils.getApplicationContext(), "com.example.amap3d.Services.DownloadService")) {
+        if (isServiceWorking(MainActivity.getActivity().getApplicationContext(), "com.example.amap3d.Services.DownloadService")) {
             Utils.uiToast("更新下载中...");
             return;
         }
-        final AlertDialog.Builder builer = new AlertDialog.Builder(Utils.getMainActivity());
+        final AlertDialog.Builder builer = new AlertDialog.Builder(MainActivity.getActivity());
         builer.setTitle(isForceUpdate ? "有必须的更新" : "有可用的更新");
         builer.setCancelable(!isForceUpdate);
         builer.setMessage(updateDescription);
@@ -110,7 +123,7 @@ public class UpdateManager {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (isForceUpdate) {
-                    Utils.getMainActivity().finish();
+                    MainActivity.getActivity().finish();
                     return;
                 }
             }
@@ -121,7 +134,7 @@ public class UpdateManager {
                 downloadApkWithService();
             }
         });
-        Utils.getMainActivity().runOnUiThread(new Runnable() {
+        MainActivity.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 AlertDialog dialog = builer.create();
@@ -150,11 +163,11 @@ public class UpdateManager {
 
     private void downloadApkWithService() {
         Utils.uiToast("开始下载");
-        Utils.getMainActivity().runOnUiThread(new Runnable() {
+        MainActivity.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Intent intent = new Intent(Utils.getMainActivity(), DownloadService.class);
-                Utils.getMainActivity().startService(intent);
+                Intent intent = new Intent(MainActivity.getActivity(), DownloadService.class);
+                MainActivity.getActivity().startService(intent);
             }
         });
     }

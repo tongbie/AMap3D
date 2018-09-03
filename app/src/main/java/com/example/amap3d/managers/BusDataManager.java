@@ -2,7 +2,7 @@ package com.example.amap3d.managers;
 
 import android.util.Log;
 
-import com.example.amap3d.Datas;
+import com.example.amap3d.datas.Datas;
 import com.example.amap3d.gsons.BusDataGson;
 import com.example.amap3d.gsons.BusPositionGson;
 import com.example.amap3d.Utils;
@@ -20,8 +20,19 @@ import okhttp3.Response;
  */
 
 public class BusDataManager {
-    public static String busDataURL = "http://bus.mysdnu.cn/android/bus";
-    public static String busPositionURL = "http://bus.mysdnu.cn/android/bus/location";
+    private static BusDataManager busDataManager;
+    public static final String busDataURL = "http://bus.mysdnu.cn/android/bus";
+    public static final String busPositionURL = "http://bus.mysdnu.cn/android/bus/location";
+
+    private BusDataManager() {
+    }
+
+    public static BusDataManager getInstance() {
+        if (busDataManager == null) {
+            busDataManager = new BusDataManager();
+        }
+        return busDataManager;
+    }
 
     /* 获取校车信息 */
     public synchronized void setBusInformationToMap() {
@@ -42,7 +53,7 @@ public class BusDataManager {
                         String snippet = Pattern.compile("[^0-9]").matcher(busData.getBus_arriveSite()).replaceAll("");
                         Datas.busInformationMap.put(key, new String[]{title, snippet});
                     }
-                    Log.e("busInformationMap",Datas.busInformationMap.toString());
+                    Log.e("busInformationMap", Datas.busInformationMap.toString());
                 } catch (Exception e) {
                     e.printStackTrace();
                     Utils.uiToast("校车信息异常");

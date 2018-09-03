@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">校车查询</string>
     <string name="amap_key">7ce4d89cf298ce078b225f18f5331ea7</string>
+    <string name="title_activity_login">登录</string>
+
 </resources>

@@ -18,18 +18,6 @@ import okhttp3.OkHttpClient;
  */
 
 public class Utils {
-
-    private static Activity mainActivity;
-    private static Context appCompatContext;
-
-    public static Activity getMainActivity() {
-        return mainActivity;
-    }
-
-    public static Context getApplicationContext() {
-        return appCompatContext;
-    }
-
     public static OkHttpClient client;
     public static Gson gson;
 
@@ -41,16 +29,11 @@ public class Utils {
         gson = new Gson();
     }
 
-    public Utils(Activity mainActivity, Context appCompatContext) {
-        this.mainActivity = mainActivity;
-        this.appCompatContext = appCompatContext;
-    }
-
     public static void uiToast(final String text) {
-        mainActivity.runOnUiThread(new Runnable() {
+        MainActivity.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(mainActivity, text, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.getActivity(), text, Toast.LENGTH_SHORT).show();
             }
         });
     }

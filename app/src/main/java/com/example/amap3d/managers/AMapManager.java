@@ -26,7 +26,8 @@ import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
-import com.example.amap3d.Datas;
+import com.example.amap3d.datas.Datas;
+import com.example.amap3d.MainActivity;
 import com.example.amap3d.gsons.BusPositionGson;
 import com.example.amap3d.R;
 import com.example.amap3d.Utils;
@@ -39,12 +40,22 @@ import java.util.Arrays;
  */
 
 public class AMapManager {
+    private static AMapManager aMapManager;
     public static AMap aMap;
     public static MapView mapView;
 
+    private AMapManager(){}
+
+    public static AMapManager getInstance(){
+        if(aMapManager==null){
+            aMapManager=new AMapManager();
+        }
+        return aMapManager;
+    }
+
     public void initMapView(Bundle savedInstanceState) {
-        AMapManager.mapView = new MapView(Utils.getMainActivity());
-        ((MapViewContainerView) Utils.getMainActivity().findViewById(R.id.mapViewContainerView)).addView(AMapManager.mapView);
+        AMapManager.mapView = new MapView(MainActivity.getActivity());
+        ((MapViewContainerView) MainActivity.getActivity().findViewById(R.id.mapViewContainerView)).addView(AMapManager.mapView);
         AMapManager.mapView.onCreate(savedInstanceState);
     }
 
@@ -80,7 +91,7 @@ public class AMapManager {
         @Override
         public View getInfoContents(Marker marker) {
             if (infoWindow == null) {
-                infoWindow = LayoutInflater.from(Utils.getApplicationContext()).inflate(
+                infoWindow = LayoutInflater.from(MainActivity.getActivity().getApplicationContext()).inflate(
                         R.layout.infowindow, null);
             }
             ((TextView) infoWindow.findViewById(R.id.text)).setText(marker.getTitle());
@@ -104,17 +115,17 @@ public class AMapManager {
                     return;
                 }
             }
-            AlertDialog dialog = new AlertDialog.Builder(Utils.getMainActivity())
+            AlertDialog dialog = new AlertDialog.Builder(MainActivity.getActivity())
                     .setTitle("拨号")
                     .setMessage("是否拨打 " + num)
                     .setNegativeButton("确定", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            if (ContextCompat.checkSelfPermission(Utils.getMainActivity(), Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-                                ActivityCompat.requestPermissions(Utils.getMainActivity(), new String[]{android.Manifest.permission.CALL_PHONE}, 0x003);
+                            if (ContextCompat.checkSelfPermission(MainActivity.getActivity(), Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(MainActivity.getActivity(), new String[]{android.Manifest.permission.CALL_PHONE}, 0x003);
                             } else {
                                 Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + num));
-                                Utils.getMainActivity().startActivity(intent);
+                                MainActivity.getActivity().startActivity(intent);
                                 dialog.dismiss();
                             }
                         }
@@ -164,7 +175,7 @@ public class AMapManager {
     }
 
     /* 设置平滑移动点 */
-    public static void moveMarker(AMap aMap, LatLng[] latLngs, final String key) {
+    public void moveMarker(AMap aMap, LatLng[] latLngs, final String key) {
         //TODO：移动点是一个新的对象，不能添加信息
         final SmoothMoveMarker smoothMarker = new SmoothMoveMarker(aMap);
         smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.bus_move));
@@ -182,6 +193,10 @@ public class AMapManager {
                 }
             }
         });
+    }
+
+    public void removeAllMarker(){
+        aMap.clear();
     }
 
     private boolean isFirstMove = true;//用以判断在启动时移动地图至定位点

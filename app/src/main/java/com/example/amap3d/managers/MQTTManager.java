@@ -5,7 +5,7 @@ import android.util.Log;
 
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
-import com.example.amap3d.Datas;
+import com.example.amap3d.datas.Datas;
 import com.example.amap3d.gsons.BusMoveGson;
 import com.example.amap3d.gsons.MQTTAccountGson;
 import com.example.amap3d.R;
@@ -31,14 +31,23 @@ import okhttp3.Response;
  */
 
 public class MQTTManager {
+    private static MQTTManager mqttManager;
     private MqttConnectOptions mqttOptions;
     private MqttClient mqttClient;
     private String clientId;
-    private String applyForMqttAccountURL = "http://bus.mysdnu.cn/bus/mqtt";
-    private String linkMqttURL = "tcp://bus.mysdnu.cn:1880";
-    private String mqttTopic = "BusMoveList";
+    private static final String applyForMqttAccountURL = "http://bus.mysdnu.cn/bus/mqtt";
+    private static final String linkMqttURL = "tcp://bus.mysdnu.cn:1880";
+    private static final String mqttTopic = "BusMoveList";
+    public boolean isShowMoving = true;
 
-    public MQTTManager() {
+    public static MQTTManager getInstance() {
+        if (mqttManager == null) {
+            mqttManager = new MQTTManager();
+        }
+        return mqttManager;
+    }
+
+    private MQTTManager() {
         mqttOptions = new MqttConnectOptions();
         mqttOptions.setCleanSession(true);
         mqttOptions.setConnectionTimeout(10);//超时时间20s
@@ -63,7 +72,7 @@ public class MQTTManager {
     /* 连接MQTT服务器 */
     public synchronized void linkMQTT(MqttCallback mqttCallback) {
         if (mqttClient != null && mqttClient.isConnected()) {
-            Utils.uiToast("服务器已连接");
+//            Utils.uiToast("服务器已连接");
             return;
         }
         try {
@@ -112,26 +121,28 @@ public class MQTTManager {
         @Override
         public void connectionLost(Throwable cause) {
             Utils.uiToast("连接失败，请刷新重试");
-            Log.e("MqttConnectionLost", cause.getMessage());
+//            Log.e("MqttConnectionLost", cause.getMessage());
         }
 
         @Override
-        public void messageArrived(String topic, MqttMessage message) throws Exception {
-            try {
-                List<BusMoveGson> busMoveGsons = Utils.gson.fromJson(message.toString(), new TypeToken<List<BusMoveGson>>() {
-                }.getType());
-                for (BusMoveGson busMoveGson : busMoveGsons) {
-                    String key = busMoveGson.getGPSDeviceIMEI();
-                    LatLng latLng = Datas.busMarkerMap.get(key).getPosition();
-                    double lat = latLng.latitude;
-                    double lng = latLng.longitude;
-                    Datas.busMarkerMap.get(key).setPosition(new LatLng(busMoveGson.getLat(), busMoveGson.getLng()));
-                    Datas.busMarkerMap.get(key).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
-                    AMapManager.moveMarker(AMapManager.aMap, new LatLng[]{new LatLng(lat, lng), Datas.busMarkerMap.get(key).getPosition()}, key);
+        public void messageArrived(String topic, MqttMessage message) {
+            if (isShowMoving) {
+                try {
+                    List<BusMoveGson> busMoveGsons = Utils.gson.fromJson(message.toString(), new TypeToken<List<BusMoveGson>>() {
+                    }.getType());
+                    for (BusMoveGson busMoveGson : busMoveGsons) {
+                        String key = busMoveGson.getGPSDeviceIMEI();
+                        LatLng latLng = Datas.busMarkerMap.get(key).getPosition();
+                        double lat = latLng.latitude;
+                        double lng = latLng.longitude;
+                        Datas.busMarkerMap.get(key).setPosition(new LatLng(busMoveGson.getLat(), busMoveGson.getLng()));
+                        Datas.busMarkerMap.get(key).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
+                        AMapManager.getInstance().moveMarker(AMapManager.aMap, new LatLng[]{new LatLng(lat, lng), Datas.busMarkerMap.get(key).getPosition()}, key);
+                    }
+                    Log.e("messageArrived", Datas.busMarkerMap.toString());
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                Log.e("messageArrived", Datas.busMarkerMap.toString());
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
 
@@ -153,6 +164,8 @@ public class MQTTManager {
     }
 
     public void destroy() {
+        mqttClient = null;
+        mqttOptions = null;
         disconnect();
     }
 }

@@ -1,55 +1,76 @@
 package com.example.amap3d;
 
-import android.content.Intent;
+import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.PopupMenu;
 import android.widget.Toast;
 
-import com.example.amap3d.bustimetable.BusTimetableActivity;
+import com.example.amap3d.datas.Datas;
 import com.example.amap3d.managers.AMapManager;
 import com.example.amap3d.managers.BusDataManager;
 import com.example.amap3d.managers.MQTTManager;
 import com.example.amap3d.managers.UpdateManager;
-import com.example.amap3d.views.MenuButton;
-import com.example.amap3d.views.RefreshButton;
+import com.example.amap3d.managers.ViewManager;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+public class MainActivity extends AppCompatActivity {
 
     private MQTTManager mqttManager;
     private AMapManager aMapManager;
     private BusDataManager busDataManager;
+    private ViewManager viewManager;
+    private static Activity activity;
+    private ExecutorService executorService;
 
-    private PopupMenu popupMenu;
-    private RefreshButton refreshButton;
-
-    private boolean isRefreshing = false;
+    public static Activity getActivity() {
+        return activity;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        activity = this;
         Utils.hideTitleBar(this);
         setContentView(R.layout.activity_main);
-        new Utils(this, getApplicationContext());
-        initView();
-        aMapManager.initMapView(savedInstanceState);
-        if (AMapManager.aMap == null) {
-            AMapManager.aMap = AMapManager.mapView.getMap();
-        }
-        aMapManager.setAMap(AMapManager.aMap);
-        aMapManager.setLocationStyle(AMapManager.aMap);
+        initManagers();
+        initView(savedInstanceState);
+        initObject();
         if (isNetworkAvailable()) {
             getAllData();
             update(null);
         }
     }
 
-    private void update(final String text) {
+    private void initView(Bundle savedInstanceState) {
+        viewManager.initView();
+        aMapManager.initMapView(savedInstanceState);
+        if (AMapManager.aMap == null) {
+            AMapManager.aMap = AMapManager.mapView.getMap();
+        }
+        aMapManager.setAMap(AMapManager.aMap);
+        aMapManager.setLocationStyle(AMapManager.aMap);
+    }
+
+    private void initObject() {
+        executorService= Executors.newFixedThreadPool(1);
+    }
+
+    public void update(final String text) {
         if (isNetworkAvailable()) {
             new Thread(new Runnable() {
                 @Override
@@ -66,119 +87,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                         return;
                     }
-                    UpdateManager updateManager = new UpdateManager();
-                    updateManager.dealWithUpdateState(updateState);
+                    UpdateManager.getInstance().dealWithUpdateState(updateState);
                 }
             }).start();
         }
     }
 
-    private void initView() {
-        mqttManager = new MQTTManager();
-        aMapManager = new AMapManager();
-        busDataManager = new BusDataManager();
-
-        refreshButton = findViewById(R.id.refreshButton);
-        refreshButton.setOnClickListener(this);
-        findViewById(R.id.menuButton).setOnClickListener(this);
-
-//        final CoordinatorLayout coordinatorLayout = findViewById(R.id.coordinatorLayout);
-//        final NestedScrollView nestedScrollView = findViewById(R.id.nestedScrollView);
-//        final TextView upwardSlideTextView = findViewById(R.id.upTextView);
-//        final TextView downwardSlideTextView = findViewById(R.id.downTextView);
-//        ((AppBarLayout) findViewById(R.id.appBarLayout)).addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
-//            @Override
-//            public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
-//                if (verticalOffset < 0) {
-//                    upwardSlideTextView.setText("下拉返回");
-//                    downwardSlideTextView.setVisibility(View.GONE);
-//                } else if (verticalOffset == 0) {
-//                    upwardSlideTextView.setText("上滑查看发车时间");
-//                }
-//            }
-//        });
-        initPopupMenu();
+    private void initManagers() {
+        mqttManager = MQTTManager.getInstance();
+        aMapManager = AMapManager.getInstance();
+        busDataManager = BusDataManager.getInstance();
+        viewManager = new ViewManager();
     }
 
-    private void initPopupMenu() {
-        final MenuButton menuButton = findViewById(R.id.menuButton);
-        popupMenu = new PopupMenu(getApplicationContext(), menuButton);
-        popupMenu.getMenuInflater().inflate(R.menu.main, popupMenu.getMenu());
-        popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
-            @Override
-            public void onDismiss(PopupMenu menu) {
-                menuButton.setIsShow(0);
-            }
-        });
-        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                switch (item.getItemId()) {
-                    case R.id.timeTable:
-                        startActivity(new Intent(MainActivity.this, BusTimetableActivity.class));
-                        break;
-                    case R.id.upDate:
-                        update("已是最新版本");
-                        break;
-                }
-                return false;
-            }
-        });
+
+    public synchronized void getAllData() {
+        executorService.submit(getAllDataRunnable);
     }
 
-    private synchronized void getAllData() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                busDataManager.setBusInformationToMap();
-                Datas.busPositionList = busDataManager.getBusPosition();
-                Log.e("busPositionList",Datas.busPositionList.toString());
-                aMapManager.addPoints(AMapManager.aMap);
-                mqttManager.linkMQTT(mqttManager.mqttCallback);
-                refreshButton.setRefreshing(false);
-                isRefreshing = false;
-            }
-        }).start();
-    }
-
-    @Override
-    public void onClick(View view) {
-        switch (view.getId()) {
-            case R.id.refreshButton:
-                if (isNetworkAvailable()) {
-                    refreshButton.setRefreshing(true);
-                    Toast.makeText(this, "正在刷新...", Toast.LENGTH_SHORT).show();
-                    refresh();
-                }
-                break;
-            case R.id.menuButton:
-                MenuButton menuButton = ((MenuButton) view);
-                if (menuButton.getIsShow() != 1) {
-                    menuButton.setIsShow(1);
-                } else if (menuButton.getIsShow() == 1) {
-                    menuButton.setIsShow(0);
-                }
-                popupMenu.show();
-                break;
+    private Runnable getAllDataRunnable =new Runnable() {
+        @Override
+        public void run() {
+            mqttManager.isShowMoving = true;
+            busDataManager.setBusInformationToMap();
+            Datas.busPositionList = busDataManager.getBusPosition();
+            aMapManager.addPoints(AMapManager.aMap);
+            mqttManager.linkMQTT(mqttManager.mqttCallback);
+            viewManager.refreshButton.setRefreshing(false);
+            viewManager.isRefreshing = false;
         }
-    }
+    };
 
-    private void refresh() {
-        if (isRefreshing) {
-            return;
-        }
-        AMapManager.aMap.clear();
-        Datas.busInformationMap.clear();
-        Datas.busPositionList.clear();
-        Datas.busMarkerMap.clear();
-        isRefreshing = true;
-        getAllData();
-    }
-
-
-    /*----------------------------------------------------------------------------------------------------------------------------------------------*/
-
-    private boolean isNetworkAvailable() {
+    public boolean isNetworkAvailable() {
         boolean networkState = true;
         if (!Utils.checkNetworkState(this)) {
             Toast.makeText(this, "网络连接不可用", Toast.LENGTH_SHORT).show();
@@ -219,10 +159,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         aMapManager.destroy();
         mqttManager.destroy();
         Datas.destroy();
+        activity = null;
+        super.onDestroy();
         System.exit(0);
     }
 }
