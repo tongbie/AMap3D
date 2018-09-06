@@ -1,15 +1,19 @@
 package com.example.amap3d.managers;
 
 import android.os.Build;
+import android.os.Looper;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
+import com.example.amap3d.MainActivity;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.gsons.BusMoveGson;
 import com.example.amap3d.gsons.MQTTAccountGson;
 import com.example.amap3d.R;
 import com.example.amap3d.Utils;
+import com.example.amap3d.gsons.UploadPositionGson;
 import com.google.gson.reflect.TypeToken;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -34,7 +38,7 @@ public class MQTTManager {
     private static MQTTManager mqttManager;
     private MqttConnectOptions mqttOptions;
     private MqttClient mqttClient;
-    private String clientId;
+    public static String clientId;
     private static final String applyForMqttAccountURL = "http://bus.mysdnu.cn/bus/mqtt";
     private static final String linkMqttURL = "tcp://bus.mysdnu.cn:1880";
     private static final String mqttTopic = "BusMoveList";
@@ -61,18 +65,18 @@ public class MQTTManager {
                 Build.TAGS.length() % 10 + Build.TYPE.length() % 10 +
                 Build.USER.length() % 10;
 
-        try {
-            mqttClient = new MqttClient(linkMqttURL, clientId, new MemoryPersistence());
-        } catch (Exception e) {
-            e.printStackTrace();
-            Utils.uiToast("服务器连接失败");
-        }
+//        try {
+//            mqttClient = new MqttClient(linkMqttURL, clientId, new MemoryPersistence());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            Utils.uiToast("服务器连接失败");
+//        }
     }
 
     /* 连接MQTT服务器 */
     public synchronized void linkMQTT(MqttCallback mqttCallback) {
         if (mqttClient != null && mqttClient.isConnected()) {
-//            Utils.uiToast("服务器已连接");
+            Utils.uiToast("服务器已连接");
             return;
         }
         try {
@@ -93,7 +97,7 @@ public class MQTTManager {
                     mqttClient = new MqttClient(linkMqttURL, clientId, new MemoryPersistence());
                     mqttClient.setCallback(mqttCallback);
                     mqttClient.connect(mqttOptions);
-                    subscribeMqttTopic(mqttTopic, 0);
+                    subscribeTopic(mqttTopic, 0);
                 } catch (Exception e) {
                     e.printStackTrace();
                     Utils.uiToast("连接服务器失败");
@@ -107,26 +111,46 @@ public class MQTTManager {
     }
 
     /* 订阅消息 */
-    public void subscribeMqttTopic(String topic, int qos) {
+    public void subscribeTopic(String topic, int qos) {
         if (mqttClient != null) {
             try {
                 mqttClient.subscribe(topic, qos);
             } catch (MqttException e) {
                 e.printStackTrace();
+                Log.e("subscribeTopic",e.getMessage());
             }
+        }
+    }
+
+    public void publish(String topic, String msg, boolean isRetained) {
+        try {
+            int qos = 0;
+            if (mqttClient != null) {
+                MqttMessage message = new MqttMessage();
+                message.setQos(qos);
+                message.setRetained(isRetained);
+                message.setPayload(msg.getBytes());
+                mqttClient.publish(topic, message);
+            }
+        } /*catch (MqttPersistenceException e) {
+            e.printStackTrace();
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }*/ catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     public MqttCallback mqttCallback = new MqttCallback() {
         @Override
         public void connectionLost(Throwable cause) {
-            Utils.uiToast("连接失败，请刷新重试");
-//            Log.e("MqttConnectionLost", cause.getMessage());
+            Utils.uiToast("失去连接，请刷新重试");
+            Log.e("MqttConnectionLost", cause.getCause().getMessage());
         }
 
         @Override
         public void messageArrived(String topic, MqttMessage message) {
-            if (isShowMoving) {
+            if (isShowMoving&&topic.equals(mqttTopic)) {
                 try {
                     List<BusMoveGson> busMoveGsons = Utils.gson.fromJson(message.toString(), new TypeToken<List<BusMoveGson>>() {
                     }.getType());
@@ -139,10 +163,12 @@ public class MQTTManager {
                         Datas.busMarkerMap.get(key).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
                         AMapManager.getInstance().moveMarker(AMapManager.aMap, new LatLng[]{new LatLng(lat, lng), Datas.busMarkerMap.get(key).getPosition()}, key);
                     }
-                    Log.e("messageArrived", Datas.busMarkerMap.toString());
+//                    Log.e("messageArrived", Datas.busMarkerMap.toString());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }else if(topic.equals(uploadPositionTitle)){
+                Toast.makeText(MainActivity.getActivity(), message.toString(), Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -151,6 +177,46 @@ public class MQTTManager {
 
         }
     };
+
+    public UploadPositionGson uploadPositionGson;
+
+    private static final String uploadPositionTitle="clientLocation";
+
+    public void uploadPosition() {
+        uploadPositionGson = new UploadPositionGson();
+        uploadPositionGson.setDeviceId(clientId);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Looper.prepare();
+                subscribeTopic(uploadPositionTitle, 0);
+                Looper.loop();
+            }
+        });
+
+        AMapManager.getInstance().setOnPositionChangedListener(new AMapManager.OnPositionChangedListener() {
+            @Override
+            public void onPositionChanged(double longitude, double latitude) {
+                uploadPositionGson.setLat(latitude + "");
+                uploadPositionGson.setLng(longitude + "");
+                String uploadPositionJson = Utils.gson.toJson(uploadPositionGson);
+//                Log.e("uploadPosition",uploadPositionJson);
+                publish(uploadPositionTitle, uploadPositionJson, false);
+            }
+        });
+    }
+
+    public void destroyUploadPosition() {
+        AMapManager.getInstance().setOnPositionChangedListener(null);
+        try {
+            mqttClient.unsubscribe(uploadPositionTitle);
+        } catch (MqttException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     /* 断开连接 */
     public void disconnect() {

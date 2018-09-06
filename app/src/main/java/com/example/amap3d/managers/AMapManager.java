@@ -44,11 +44,12 @@ public class AMapManager {
     public static AMap aMap;
     public static MapView mapView;
 
-    private AMapManager(){}
+    private AMapManager() {
+    }
 
-    public static AMapManager getInstance(){
-        if(aMapManager==null){
-            aMapManager=new AMapManager();
+    public static AMapManager getInstance() {
+        if (aMapManager == null) {
+            aMapManager = new AMapManager();
         }
         return aMapManager;
     }
@@ -195,7 +196,7 @@ public class AMapManager {
         });
     }
 
-    public void removeAllMarker(){
+    public void removeAllMarker() {
         aMap.clear();
     }
 
@@ -206,11 +207,13 @@ public class AMapManager {
         aMap.setOnMyLocationChangeListener(new AMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
-                if (!isFirstMove) {
-                    aMap.setOnMyLocationChangeListener(null);
+                if (isFirstMove) {
+                    aMap.moveCamera(CameraUpdateFactory.changeLatLng(new LatLng(location.getLatitude(), location.getLongitude())));
+                    isFirstMove = false;
                 }
-                aMap.moveCamera(CameraUpdateFactory.changeLatLng(new LatLng(location.getLatitude(), location.getLongitude())));
-                isFirstMove = false;
+                if (onPositionChangedListener != null) {
+                    onPositionChangedListener.onPositionChanged(location.getLongitude(), location.getLatitude());
+                }
             }
         });
         aMap.setOnMarkerClickListener(markerClickListener);
@@ -224,10 +227,21 @@ public class AMapManager {
         aMap.setOnInfoWindowClickListener(infoWindowClickListener);
     }
 
-    public void destroy(){
+    public void destroy() {
         mapView.onDestroy();
         mapView = null;
         aMap.clear();
         aMap = null;
+    }
+
+    private OnPositionChangedListener onPositionChangedListener;
+
+    public interface OnPositionChangedListener {
+
+        public void onPositionChanged(double longitude, double latitude);
+    }
+
+    public void setOnPositionChangedListener(OnPositionChangedListener onPositionChangedListener) {
+        this.onPositionChangedListener = onPositionChangedListener;
     }
 }

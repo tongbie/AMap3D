@@ -14,19 +14,8 @@ import com.example.amap3d.managers.MQTTManager;
 import com.example.amap3d.managers.UpdateManager;
 import com.example.amap3d.managers.ViewManager;
 
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -35,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private BusDataManager busDataManager;
     private ViewManager viewManager;
     private static Activity activity;
-    private ExecutorService executorService;
+    private ExecutorService refreshExecutorService;
 
     public static Activity getActivity() {
         return activity;
@@ -49,7 +38,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         initManagers();
         initView(savedInstanceState);
-        initObject();
         if (isNetworkAvailable()) {
             getAllData();
             update(null);
@@ -57,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initView(Bundle savedInstanceState) {
+        refreshExecutorService = Executors.newFixedThreadPool(1);
         viewManager.initView();
         aMapManager.initMapView(savedInstanceState);
         if (AMapManager.aMap == null) {
@@ -64,10 +53,6 @@ public class MainActivity extends AppCompatActivity {
         }
         aMapManager.setAMap(AMapManager.aMap);
         aMapManager.setLocationStyle(AMapManager.aMap);
-    }
-
-    private void initObject() {
-        executorService= Executors.newFixedThreadPool(1);
     }
 
     public void update(final String text) {
@@ -97,12 +82,12 @@ public class MainActivity extends AppCompatActivity {
         mqttManager = MQTTManager.getInstance();
         aMapManager = AMapManager.getInstance();
         busDataManager = BusDataManager.getInstance();
-        viewManager = new ViewManager();
+        viewManager = ViewManager.getInstance();
     }
 
 
     public synchronized void getAllData() {
-        executorService.submit(getAllDataRunnable);
+        refreshExecutorService.submit(getAllDataRunnable);
     }
 
     private Runnable getAllDataRunnable =new Runnable() {

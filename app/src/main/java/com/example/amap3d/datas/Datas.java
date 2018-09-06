@@ -17,7 +17,7 @@ public class Datas {
     public static List<BusPositionGson> busPositionList = new ArrayList<>();//校车位置
     private static String uploadPositionInformationText = "";
 
-    public static void setUploadPositionInformationText(String text) {
+    public static void setUploadPositionRemark(String text) {
         if (null == text) {
             text = "";
         }

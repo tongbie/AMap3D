@@ -23,17 +23,35 @@ import com.example.amap3d.R;
 import com.example.amap3d.views.MenuButton;
 import com.example.amap3d.views.RefreshButton;
 
-public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollLayoutStateChangeListener {
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.internal.wire.MqttAck;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollLayoutStateChangeListener {
+    private static ViewManager viewManager;
     public PopupMenu popupMenu;
     public RefreshButton refreshButton;
     public ScrollLayout scrollLayout;
     public TextView textView;
     public RecyclerView recyclerView;
     public PopupWindow popupWindow;
+    private ExecutorService executorService;
 
     public boolean isRefreshing = false;
     private boolean isWriteAble = true;
+
+    private ViewManager() {
+        executorService =  Executors.newFixedThreadPool(1);
+    }
+
+    public static ViewManager getInstance() {
+        if (viewManager == null) {
+            viewManager = new ViewManager();
+        }
+        return viewManager;
+    }
 
     public void initView() {
         refreshButton = MainActivity.getActivity().findViewById(R.id.refreshButton);
@@ -47,7 +65,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         recyclerView.setLayoutManager(linearLayoutManager);
         initPopupMenu();
-        initUploadPositionInformationWindow();
+        initUploadPositionRemarkWindow();
     }
 
     private void initPopupMenu() {
@@ -72,7 +90,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                         break;
                     case R.id.uploadPosition:
                         if (popupWindow == null) {
-                            initUploadPositionInformationWindow();
+                            initUploadPositionRemarkWindow();
                         }
                         popupWindow.showAtLocation(MainActivity.getActivity().getWindow().getDecorView(), Gravity.CENTER, 0, 0);
                         break;
@@ -82,9 +100,11 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         });
     }
 
-    private void initUploadPositionInformationWindow() {
+    private void initUploadPositionRemarkWindow() {
         popupWindow = new PopupWindow(MainActivity.getActivity());
         popupWindow.setFocusable(true);
+        popupWindow.setOutsideTouchable(false);
+        popupWindow.setBackgroundDrawable(MainActivity.getActivity().getResources().getDrawable(android.R.color.transparent));
         int screenWidth = Utils.getScreenWidth(MainActivity.getActivity());
         popupWindow.setWidth(screenWidth * 4 / 5);
         View view = LayoutInflater.from(MainActivity.getActivity().getApplicationContext()).inflate(R.layout.window_upload_position, null);
@@ -121,8 +141,17 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
             @Override
             public void onClick(View v) {
                 popupWindow.dismiss();
-                Datas.setUploadPositionInformationText(editText.getText().toString());
-                AMapManager.getInstance().removeAllMarker();
+                final String text = editText.getText().toString();
+//                Datas.setUploadPositionRemark(editText.getText().toString());
+//                AMapManager.getInstance().removeAllMarker();
+
+//                executorService.submit(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        BusDataManager.getInstance().uploadPositionRemark(text);
+//                    }
+//                });
+                MQTTManager.getInstance().uploadPosition();
             }
         });
         view.findViewById(R.id.cancleButton).setOnClickListener(new View.OnClickListener() {

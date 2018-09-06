@@ -2,12 +2,13 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@drawable/window_background"
     android:orientation="vertical">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:background="@color/colorPrimary"
+        android:background="#00000000"
         android:gravity="center"
         android:text="备注信息"
         android:textColor="#ffffff"
@@ -37,7 +38,7 @@
 
         <Button
             android:id="@+id/completeButton"
-            android:background="@color/colorPrimary"
+            android:background="#00000000"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_marginRight="1dp"
@@ -47,7 +48,7 @@
         <Button
             android:id="@+id/cancleButton"
             android:layout_marginLeft="1dp"
-            android:background="@color/colorPrimary"
+            android:background="#00000000"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
