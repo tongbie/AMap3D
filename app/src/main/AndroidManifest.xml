@@ -88,8 +88,9 @@
             android:exported="true"
             android:process="system" />
 
-        <activity android:name=".LoginActivity"></activity>
-        <activity android:name=".UploadPositionInformationActivity"></activity>
+        <activity android:name=".LoginActivity" />
+        <activity android:name=".UploadPositionInformationActivity" />
+        <activity android:name=".login.LoginActivity"></activity>
     </application>
 
 </manifest>

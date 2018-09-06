@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/dialog_bg"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
+    android:background="#60000000"
     android:minHeight="35dp"
     android:minWidth="35dp"
-    android:background="#00000000">
+    android:orientation="horizontal"
+    app:cardCornerRadius="5dp">
+
+
 
     <ImageView
         android:id="@+id/load_iv"
@@ -14,19 +18,17 @@
         android:layout_height="30dp"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
-
         android:src="@drawable/dialog_loading_img" />
-    android:layout_marginLeft="20dp"
-    android:layout_marginStart="20dp"
-    <TextView
-        android:id="@+id/point_tv"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_toRightOf="@+id/load_iv"
-        android:layout_centerVertical="true"
-        android:layout_marginLeft="10dp"
-        android:layout_marginTop="0dp"
-        android:ellipsize="middle"
-        android:singleLine="true"
-        android:textSize="16sp" />
+
+    <!--<TextView-->
+    <!--android:id="@+id/point_tv"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_centerVertical="true"-->
+    <!--android:layout_marginLeft="10dp"-->
+    <!--android:layout_marginTop="0dp"-->
+    <!--android:layout_toRightOf="@+id/load_iv"-->
+    <!--android:ellipsize="middle"-->
+    <!--android:singleLine="true"-->
+    <!--android:textSize="16sp" />-->
 </RelativeLayout>

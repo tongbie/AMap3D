@@ -1,18 +1,25 @@
 package com.example.amap3d;
 
 import android.app.Activity;
+import android.app.Dialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
+import com.example.amap3d.bean.UserBean;
+import com.example.amap3d.common.Common;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.managers.AMapManager;
 import com.example.amap3d.managers.BusDataManager;
 import com.example.amap3d.managers.MQTTManager;
 import com.example.amap3d.managers.UpdateManager;
 import com.example.amap3d.managers.ViewManager;
+import com.example.amap3d.ui.CircularLoading;
+import com.google.gson.Gson;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
@@ -28,6 +35,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public class MainActivity extends AppCompatActivity {
 
     private MQTTManager mqttManager;
@@ -36,6 +48,9 @@ public class MainActivity extends AppCompatActivity {
     private ViewManager viewManager;
     private static Activity activity;
     private ExecutorService executorService;
+    private Dialog mCircularLoading;
+    private String oauth_token,oauth_verifier;
+    private final String userInoUrl="http://bus.mysdnu.cn/login";
 
     public static Activity getActivity() {
         return activity;
@@ -50,10 +65,69 @@ public class MainActivity extends AppCompatActivity {
         initManagers();
         initView(savedInstanceState);
         initObject();
+        getOauthCallback();
+        requestUserInfo();
+        mCircularLoading = CircularLoading.showLoadDialog(MainActivity.this, "加载中...", true);
         if (isNetworkAvailable()) {
             getAllData();
             update(null);
         }
+    }
+
+    private void getOauthCallback() {
+        Intent intent=getIntent();
+        Bundle bundle=intent.getExtras();
+        String callback=bundle.getString("callback");
+        String[] str1=callback.split("&oauth_verifier=");
+        String str2=str1[0];
+        oauth_verifier=str1[1];
+        String[] str3=str2.split("oauth_token=");
+        oauth_token=str3[1];
+        Log.i("这是callback",callback);
+        Log.i("这是两个参数",oauth_token+"......"+oauth_verifier);
+    }
+
+    private void requestUserInfo() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    OkHttpClient client = new OkHttpClient();
+                    FormBody formBody=new FormBody
+                            .Builder()
+                            .add("oauth_token",oauth_token)
+                            .add("oauth_verifier",oauth_verifier)
+                            .build();
+                    Request request = new Request
+                            .Builder()
+                            .post(formBody)
+                            .url(userInoUrl)
+                            .build();
+                    Response response = null;
+                    response = client.newCall(request).execute();
+                    if (response.isSuccessful()) {
+                        final String str=response.body().string();
+                        Log.e("返回的数据",str);
+                        Gson gson=new Gson();
+                        Common.user= gson.fromJson(str,UserBean.class);
+                        Log.i("这是user的所有信息",
+                                Common.user.getDisplayName()
+                                        +" "
+                                        +Common.user.getId()
+                                        +" "
+                                        +Common.user.getUserName());
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                               CircularLoading.closeDialog(mCircularLoading);
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     private void initView(Bundle savedInstanceState) {

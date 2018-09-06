@@ -1,7 +1,8 @@
-package cn.edu.sdnu.i.weathercard.ui;
+package com.example.amap3d.ui;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.support.v7.widget.CardView;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,8 +14,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import cn.edu.sdnu.i.weathercard.R;
-
+import com.example.amap3d.R;
 
 public class CircularLoading {
     private View v;
@@ -33,12 +33,12 @@ public class CircularLoading {
 
         // main.xml中的ImageView
         ImageView loadImage = (ImageView) v.findViewById(R.id.load_iv);
-        TextView pointTextView = (TextView) v.findViewById(R.id.point_tv);
+//        TextView pointTextView = (TextView) v.findViewById(R.id.point_tv);
         // 加载动画
         Animation hyperspaceJumpAnimation = AnimationUtils.loadAnimation(context, R.anim.rotating_animation);
         // 使用ImageView显示动画
         loadImage.startAnimation(hyperspaceJumpAnimation);
-        pointTextView.setText(msg);
+//        pointTextView.setText(msg);
         Dialog loadingDialog = new Dialog(context, R.style.TransDialogStyle);
         loadingDialog.setContentView(layout);
         loadingDialog.setCancelable(isCancelable);

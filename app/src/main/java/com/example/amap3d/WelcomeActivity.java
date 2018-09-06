@@ -35,13 +35,17 @@ public class WelcomeActivity extends AppCompatActivity {
                 permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
             }
             if (permissionList.isEmpty()) {
-                startActivity(new Intent(WelcomeActivity.this, MainActivity.class));
+//                startActivity(new Intent(WelcomeActivity.this, MainActivity.class));
+                startActivity(new Intent(WelcomeActivity.this, LoginActivity.class));
                 finish();
             } else {
+//                startActivity(new Intent(WelcomeActivity.this, MainActivity.class));
+                startActivity(new Intent(WelcomeActivity.this, LoginActivity.class));
                 requestPermissions(permissionList.toArray(new String[permissionList.size()]), 0x000);
             }
         } else {
-            startActivity(new Intent(WelcomeActivity.this, MainActivity.class));
+//            startActivity(new Intent(WelcomeActivity.this, MainActivity.class));
+            startActivity(new Intent(WelcomeActivity.this, LoginActivity.class));
             finish();
         }
     }
