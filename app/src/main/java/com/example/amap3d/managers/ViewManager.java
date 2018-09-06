@@ -142,15 +142,6 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
             public void onClick(View v) {
                 popupWindow.dismiss();
                 final String text = editText.getText().toString();
-//                Datas.setUploadPositionRemark(editText.getText().toString());
-//                AMapManager.getInstance().removeAllMarker();
-
-//                executorService.submit(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        BusDataManager.getInstance().uploadPositionRemark(text);
-//                    }
-//                });
                 MQTTManager.getInstance().uploadPosition();
             }
         });

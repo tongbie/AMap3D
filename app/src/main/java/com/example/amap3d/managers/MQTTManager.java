@@ -7,6 +7,7 @@ import android.widget.Toast;
 
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
+import com.amap.api.maps.model.MarkerOptions;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.gsons.BusMoveGson;
@@ -22,8 +23,10 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import java.io.UnsupportedEncodingException;
 import java.net.SocketTimeoutException;
 import java.util.List;
 
@@ -98,6 +101,7 @@ public class MQTTManager {
                     mqttClient.setCallback(mqttCallback);
                     mqttClient.connect(mqttOptions);
                     subscribeTopic(mqttTopic, 0);
+
                 } catch (Exception e) {
                     e.printStackTrace();
                     Utils.uiToast("连接服务器失败");
@@ -117,7 +121,7 @@ public class MQTTManager {
                 mqttClient.subscribe(topic, qos);
             } catch (MqttException e) {
                 e.printStackTrace();
-                Log.e("subscribeTopic",e.getMessage());
+                Log.e("subscribeTopic", e.getMessage());
             }
         }
     }
@@ -132,11 +136,11 @@ public class MQTTManager {
                 message.setPayload(msg.getBytes());
                 mqttClient.publish(topic, message);
             }
-        } /*catch (MqttPersistenceException e) {
+        } catch (MqttPersistenceException e) {
             e.printStackTrace();
         } catch (MqttException e) {
             e.printStackTrace();
-        }*/ catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -150,7 +154,7 @@ public class MQTTManager {
 
         @Override
         public void messageArrived(String topic, MqttMessage message) {
-            if (isShowMoving&&topic.equals(mqttTopic)) {
+            if (isShowMoving && topic.equals(mqttTopic)) {
                 try {
                     List<BusMoveGson> busMoveGsons = Utils.gson.fromJson(message.toString(), new TypeToken<List<BusMoveGson>>() {
                     }.getType());
@@ -161,14 +165,29 @@ public class MQTTManager {
                         double lng = latLng.longitude;
                         Datas.busMarkerMap.get(key).setPosition(new LatLng(busMoveGson.getLat(), busMoveGson.getLng()));
                         Datas.busMarkerMap.get(key).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
-                        AMapManager.getInstance().moveMarker(AMapManager.aMap, new LatLng[]{new LatLng(lat, lng), Datas.busMarkerMap.get(key).getPosition()}, key);
+                        AMapManager.getInstance().moveMarker(new LatLng[]{new LatLng(lat, lng), Datas.busMarkerMap.get(key).getPosition()}, key);
                     }
 //                    Log.e("messageArrived", Datas.busMarkerMap.toString());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            }else if(topic.equals(uploadPositionTitle)){
-                Toast.makeText(MainActivity.getActivity(), message.toString(), Toast.LENGTH_SHORT).show();
+            } else if (topic.equals(uploadPositionTitle)) {
+                String data = message.toString();
+                try {
+                    UploadPositionGson peopleGson = Utils.gson.fromJson(data, UploadPositionGson.class);
+                    String deviceId = peopleGson.getDeviceId();
+                    if(deviceId.equals(clientId)){
+                        return;
+                    }
+                    if (Datas.peopleMap.containsKey(deviceId)) {
+                        Datas.peopleMap.get(deviceId).remove();
+                        Datas.peopleMap.remove(deviceId);
+                    }
+                    LatLng latLng = new LatLng(Double.parseDouble(peopleGson.getLat()), Double.parseDouble(peopleGson.getLng()));
+                    Datas.peopleMap.put(deviceId,AMapManager.aMap.addMarker(new MarkerOptions().position(latLng)));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -180,33 +199,34 @@ public class MQTTManager {
 
     public UploadPositionGson uploadPositionGson;
 
-    private static final String uploadPositionTitle="clientLocation";
+    private static final String uploadPositionTitle = "clientLocation";
 
     public void uploadPosition() {
-        uploadPositionGson = new UploadPositionGson();
-        uploadPositionGson.setDeviceId(clientId);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Looper.prepare();
-                subscribeTopic(uploadPositionTitle, 0);
-                Looper.loop();
-            }
-        });
+        if (uploadPositionGson == null) {
+            uploadPositionGson = new UploadPositionGson();
+            uploadPositionGson.setDeviceId(clientId);
+            subscribeTopic(uploadPositionTitle, 0);
+            AMapManager.getInstance().setOnPositionChangedListener(new AMapManager.OnPositionChangedListener() {
+                @Override
+                public void onPositionChanged(double longitude, double latitude) {
+                    uploadPositionGson.setLat(latitude + "");
+                    uploadPositionGson.setLng(longitude + "");
+                    String uploadPositionJson = Utils.gson.toJson(uploadPositionGson);
+//                    try {
+//                        Log.e("uploadPositionJson",new String(uploadPositionJson.getBytes()));
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
 
-        AMapManager.getInstance().setOnPositionChangedListener(new AMapManager.OnPositionChangedListener() {
-            @Override
-            public void onPositionChanged(double longitude, double latitude) {
-                uploadPositionGson.setLat(latitude + "");
-                uploadPositionGson.setLng(longitude + "");
-                String uploadPositionJson = Utils.gson.toJson(uploadPositionGson);
-//                Log.e("uploadPosition",uploadPositionJson);
-                publish(uploadPositionTitle, uploadPositionJson, false);
-            }
-        });
+//                    Log.e("uploadPosition", uploadPositionJson);
+                    publish(uploadPositionTitle, uploadPositionJson, true);
+                }
+            });
+        }
     }
 
     public void destroyUploadPosition() {
+        uploadPositionGson = null;
         AMapManager.getInstance().setOnPositionChangedListener(null);
         try {
             mqttClient.unsubscribe(uploadPositionTitle);

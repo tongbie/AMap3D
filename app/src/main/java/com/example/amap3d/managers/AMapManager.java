@@ -31,9 +31,16 @@ import com.example.amap3d.MainActivity;
 import com.example.amap3d.gsons.BusPositionGson;
 import com.example.amap3d.R;
 import com.example.amap3d.Utils;
+import com.example.amap3d.gsons.UploadPositionGson;
 import com.example.amap3d.views.MapViewContainerView;
+import com.google.gson.reflect.TypeToken;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
+
+import okhttp3.Request;
+import okhttp3.Response;
 
 /**
  * Created by BieTong on 2018/3/20.
@@ -61,7 +68,7 @@ public class AMapManager {
     }
 
     /* 设置定位模式 */
-    public void setLocationStyle(AMap aMap) {
+    public void setLocationStyle() {
         MyLocationStyle myLocationStyle = new MyLocationStyle();
         myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE_NO_CENTER);
         myLocationStyle.interval(1500);//连续定位间隔
@@ -156,7 +163,7 @@ public class AMapManager {
     };
 
     /* 添加校车定位点 */
-    public synchronized void addPoints(AMap aMap) {
+    public synchronized void addPoints() {
         if (Datas.busPositionList == null) {
             Utils.uiToast("校车位置获取失败");
             return;
@@ -175,8 +182,12 @@ public class AMapManager {
         }
     }
 
+    public void addPeople() {
+
+    }
+
     /* 设置平滑移动点 */
-    public void moveMarker(AMap aMap, LatLng[] latLngs, final String key) {
+    public void moveMarker(LatLng[] latLngs, final String key) {
         //TODO：移动点是一个新的对象，不能添加信息
         final SmoothMoveMarker smoothMarker = new SmoothMoveMarker(aMap);
         smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.bus_move));
@@ -202,7 +213,10 @@ public class AMapManager {
 
     private boolean isFirstMove = true;//用以判断在启动时移动地图至定位点
 
-    public void setAMap(final AMap aMap) {
+    private double lat = 0, lng = 0;
+
+    /*设置aMap对象*/
+    public void setAMap() {
         aMap.moveCamera(CameraUpdateFactory.zoomTo(17));//缩放
         aMap.setOnMyLocationChangeListener(new AMap.OnMyLocationChangeListener() {
             @Override
@@ -212,7 +226,11 @@ public class AMapManager {
                     isFirstMove = false;
                 }
                 if (onPositionChangedListener != null) {
-                    onPositionChangedListener.onPositionChanged(location.getLongitude(), location.getLatitude());
+//                    if (location.getLatitude() != lat && location.getLongitude() != lng) {
+                    lat = location.getLatitude();
+                    lng = location.getLongitude();
+                    onPositionChangedListener.onPositionChanged(lng, lat);
+//                    }
                 }
             }
         });
@@ -238,10 +256,35 @@ public class AMapManager {
 
     public interface OnPositionChangedListener {
 
-        public void onPositionChanged(double longitude, double latitude);
+        void onPositionChanged(double longitude, double latitude);
     }
 
     public void setOnPositionChangedListener(OnPositionChangedListener onPositionChangedListener) {
         this.onPositionChangedListener = onPositionChangedListener;
+    }
+
+    public void getPeoplePosition() {
+        String url = "http://bus.mysdnu.cn/client";
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+        try {
+            Response response = Utils.client.newCall(request).execute();
+            String data = response.body().string();
+            int code = response.code();
+            if (code == 200 && data != null) {
+                List<UploadPositionGson> uploadPositionGsonList = Utils.gson.fromJson(data, new TypeToken<List<UploadPositionGson>>() {
+                }.getType());
+                Datas.peopleMap.clear();
+                for (UploadPositionGson peopleGson : uploadPositionGsonList) {
+                    LatLng latLng = new LatLng(Double.parseDouble(peopleGson.getLat()), Double.parseDouble(peopleGson.getLng()));
+                    Datas.peopleMap.put(peopleGson.getDeviceId(), AMapManager.aMap.addMarker(new MarkerOptions().position(latLng)));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Utils.uiToast("位置列表获取失败");
+        }
+
     }
 }

@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
             getAllData();
             update(null);
         }
+
     }
 
     private void initView(Bundle savedInstanceState) {
@@ -51,8 +52,8 @@ public class MainActivity extends AppCompatActivity {
         if (AMapManager.aMap == null) {
             AMapManager.aMap = AMapManager.mapView.getMap();
         }
-        aMapManager.setAMap(AMapManager.aMap);
-        aMapManager.setLocationStyle(AMapManager.aMap);
+        aMapManager.setAMap();
+        aMapManager.setLocationStyle();
     }
 
     public void update(final String text) {
@@ -96,8 +97,9 @@ public class MainActivity extends AppCompatActivity {
             mqttManager.isShowMoving = true;
             busDataManager.setBusInformationToMap();
             Datas.busPositionList = busDataManager.getBusPosition();
-            aMapManager.addPoints(AMapManager.aMap);
+            aMapManager.addPoints();
             mqttManager.linkMQTT(mqttManager.mqttCallback);
+            aMapManager.getPeoplePosition();
             viewManager.refreshButton.setRefreshing(false);
             viewManager.isRefreshing = false;
         }
