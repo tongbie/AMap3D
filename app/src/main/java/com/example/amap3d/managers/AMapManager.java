@@ -262,29 +262,4 @@ public class AMapManager {
     public void setOnPositionChangedListener(OnPositionChangedListener onPositionChangedListener) {
         this.onPositionChangedListener = onPositionChangedListener;
     }
-
-    public void getPeoplePosition() {
-        String url = "http://bus.mysdnu.cn/client";
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-        try {
-            Response response = Utils.client.newCall(request).execute();
-            String data = response.body().string();
-            int code = response.code();
-            if (code == 200 && data != null) {
-                List<UploadPositionGson> uploadPositionGsonList = Utils.gson.fromJson(data, new TypeToken<List<UploadPositionGson>>() {
-                }.getType());
-                Datas.peopleMap.clear();
-                for (UploadPositionGson peopleGson : uploadPositionGsonList) {
-                    LatLng latLng = new LatLng(Double.parseDouble(peopleGson.getLat()), Double.parseDouble(peopleGson.getLng()));
-                    Datas.peopleMap.put(peopleGson.getDeviceId(), AMapManager.aMap.addMarker(new MarkerOptions().position(latLng)));
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Utils.uiToast("位置列表获取失败");
-        }
-
-    }
 }

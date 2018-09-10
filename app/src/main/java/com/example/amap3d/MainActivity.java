@@ -9,8 +9,9 @@ import android.widget.Toast;
 
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.managers.AMapManager;
-import com.example.amap3d.managers.BusDataManager;
+import com.example.amap3d.managers.BusManager;
 import com.example.amap3d.managers.MQTTManager;
+import com.example.amap3d.managers.PeopleManager;
 import com.example.amap3d.managers.UpdateManager;
 import com.example.amap3d.managers.ViewManager;
 
@@ -19,10 +20,6 @@ import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
-    private MQTTManager mqttManager;
-    private AMapManager aMapManager;
-    private BusDataManager busDataManager;
-    private ViewManager viewManager;
     private static Activity activity;
     private ExecutorService refreshExecutorService;
 
@@ -36,7 +33,6 @@ public class MainActivity extends AppCompatActivity {
         activity = this;
         Utils.hideTitleBar(this);
         setContentView(R.layout.activity_main);
-        initManagers();
         initView(savedInstanceState);
         if (isNetworkAvailable()) {
             getAllData();
@@ -47,13 +43,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void initView(Bundle savedInstanceState) {
         refreshExecutorService = Executors.newFixedThreadPool(1);
-        viewManager.initView();
-        aMapManager.initMapView(savedInstanceState);
+        ViewManager.getInstance().initView();
+        AMapManager.getInstance().initMapView(savedInstanceState);
         if (AMapManager.aMap == null) {
             AMapManager.aMap = AMapManager.mapView.getMap();
         }
-        aMapManager.setAMap();
-        aMapManager.setLocationStyle();
+        AMapManager.getInstance().setAMap();
+        AMapManager.getInstance().setLocationStyle();
     }
 
     public void update(final String text) {
@@ -79,14 +75,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void initManagers() {
-        mqttManager = MQTTManager.getInstance();
-        aMapManager = AMapManager.getInstance();
-        busDataManager = BusDataManager.getInstance();
-        viewManager = ViewManager.getInstance();
-    }
-
-
     public synchronized void getAllData() {
         refreshExecutorService.submit(getAllDataRunnable);
     }
@@ -94,14 +82,14 @@ public class MainActivity extends AppCompatActivity {
     private Runnable getAllDataRunnable =new Runnable() {
         @Override
         public void run() {
-            mqttManager.isShowMoving = true;
-            busDataManager.setBusInformationToMap();
-            Datas.busPositionList = busDataManager.getBusPosition();
-            aMapManager.addPoints();
-            mqttManager.linkMQTT(mqttManager.mqttCallback);
-            aMapManager.getPeoplePosition();
-            viewManager.refreshButton.setRefreshing(false);
-            viewManager.isRefreshing = false;
+            MQTTManager.getInstance().isShowMoving = true;
+            BusManager.getInstance().setBusInformationToMap();
+            Datas.busPositionList = BusManager.getInstance().getBusPosition();
+            AMapManager.getInstance().addPoints();
+            MQTTManager.getInstance().linkMQTT(MQTTManager.getInstance().mqttCallback);
+            PeopleManager.getInstance().getPeoplePosition();
+            ViewManager.getInstance().refreshButton.setRefreshing(false);
+            ViewManager.getInstance().isRefreshing = false;
         }
     };
 
@@ -146,8 +134,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        aMapManager.destroy();
-        mqttManager.destroy();
+        AMapManager.getInstance().destroy();
+        PeopleManager.getInstance().destroy();
+        MQTTManager.getInstance().destroy();
         Datas.destroy();
         activity = null;
         super.onDestroy();

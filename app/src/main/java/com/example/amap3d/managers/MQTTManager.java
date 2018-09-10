@@ -7,6 +7,7 @@ import android.widget.Toast;
 
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
+import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.datas.Datas;
@@ -40,7 +41,7 @@ import okhttp3.Response;
 public class MQTTManager {
     private static MQTTManager mqttManager;
     private MqttConnectOptions mqttOptions;
-    private MqttClient mqttClient;
+    public MqttClient mqttClient;
     public static String clientId;
     private static final String applyForMqttAccountURL = "http://bus.mysdnu.cn/bus/mqtt";
     private static final String linkMqttURL = "tcp://bus.mysdnu.cn:1880";
@@ -101,7 +102,7 @@ public class MQTTManager {
                     mqttClient.setCallback(mqttCallback);
                     mqttClient.connect(mqttOptions);
                     subscribeTopic(mqttTopic, 0);
-
+                    subscribeTopic(PeopleManager.getInstance().uploadPositionTitle, 0);
                 } catch (Exception e) {
                     e.printStackTrace();
                     Utils.uiToast("连接服务器失败");
@@ -171,20 +172,22 @@ public class MQTTManager {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } else if (topic.equals(uploadPositionTitle)) {
+            } else if (topic.equals(PeopleManager.getInstance().uploadPositionTitle)) {
                 String data = message.toString();
                 try {
                     UploadPositionGson peopleGson = Utils.gson.fromJson(data, UploadPositionGson.class);
                     String deviceId = peopleGson.getDeviceId();
-                    if(deviceId.equals(clientId)){
-                        return;
-                    }
+//                    if(deviceId.equals(clientId)){
+//                        return;
+//                    }
                     if (Datas.peopleMap.containsKey(deviceId)) {
                         Datas.peopleMap.get(deviceId).remove();
                         Datas.peopleMap.remove(deviceId);
                     }
                     LatLng latLng = new LatLng(Double.parseDouble(peopleGson.getLat()), Double.parseDouble(peopleGson.getLng()));
-                    Datas.peopleMap.put(deviceId,AMapManager.aMap.addMarker(new MarkerOptions().position(latLng)));
+                    Marker marker=AMapManager.aMap.addMarker(new MarkerOptions().position(latLng));
+                    marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
+                    Datas.peopleMap.put(deviceId,marker);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -197,45 +200,7 @@ public class MQTTManager {
         }
     };
 
-    public UploadPositionGson uploadPositionGson;
 
-    private static final String uploadPositionTitle = "clientLocation";
-
-    public void uploadPosition() {
-        if (uploadPositionGson == null) {
-            uploadPositionGson = new UploadPositionGson();
-            uploadPositionGson.setDeviceId(clientId);
-            subscribeTopic(uploadPositionTitle, 0);
-            AMapManager.getInstance().setOnPositionChangedListener(new AMapManager.OnPositionChangedListener() {
-                @Override
-                public void onPositionChanged(double longitude, double latitude) {
-                    uploadPositionGson.setLat(latitude + "");
-                    uploadPositionGson.setLng(longitude + "");
-                    String uploadPositionJson = Utils.gson.toJson(uploadPositionGson);
-//                    try {
-//                        Log.e("uploadPositionJson",new String(uploadPositionJson.getBytes()));
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                    }
-
-//                    Log.e("uploadPosition", uploadPositionJson);
-                    publish(uploadPositionTitle, uploadPositionJson, true);
-                }
-            });
-        }
-    }
-
-    public void destroyUploadPosition() {
-        uploadPositionGson = null;
-        AMapManager.getInstance().setOnPositionChangedListener(null);
-        try {
-            mqttClient.unsubscribe(uploadPositionTitle);
-        } catch (MqttException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
 
     /* 断开连接 */

@@ -23,9 +23,6 @@ import com.example.amap3d.R;
 import com.example.amap3d.views.MenuButton;
 import com.example.amap3d.views.RefreshButton;
 
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.internal.wire.MqttAck;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -43,7 +40,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
     private boolean isWriteAble = true;
 
     private ViewManager() {
-        executorService =  Executors.newFixedThreadPool(1);
+        executorService = Executors.newFixedThreadPool(1);
     }
 
     public static ViewManager getInstance() {
@@ -107,10 +104,16 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         popupWindow.setBackgroundDrawable(MainActivity.getActivity().getResources().getDrawable(android.R.color.transparent));
         int screenWidth = Utils.getScreenWidth(MainActivity.getActivity());
         popupWindow.setWidth(screenWidth * 4 / 5);
+
         View view = LayoutInflater.from(MainActivity.getActivity().getApplicationContext()).inflate(R.layout.window_upload_position, null);
         final TextView wordCountTextView = view.findViewById(R.id.wordCountTextView);
         wordCountTextView.setText("(0/30)");
         final EditText editText = view.findViewById(R.id.uploadEditText);
+        String positionRemark = StorageManager.get("positionRemark");
+        if (positionRemark != null) {
+            editText.setText(positionRemark);
+            wordCountTextView.setText("(" + positionRemark.length() + "/30)");
+        }
         editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -137,14 +140,18 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                 wordCountTextView.setText("(" + content + "/30)");
             }
         });
+
         view.findViewById(R.id.completeButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 popupWindow.dismiss();
                 final String text = editText.getText().toString();
-                MQTTManager.getInstance().uploadPosition();
+                StorageManager.storage("positionRemark", text);
+                PeopleManager.getInstance().setRemark(text);
+//                MQTTManager.getInstance().uploadPosition();
             }
         });
+
         view.findViewById(R.id.cancleButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

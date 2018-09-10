@@ -12,6 +12,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import com.example.amap3d.managers.MQTTManager;
+
 public class LoginActivity extends AppCompatActivity {
     WebView webView;
 
@@ -22,9 +24,9 @@ public class LoginActivity extends AppCompatActivity {
         setWebView();
     }
 
-    private void setWebView(){
-        webView=findViewById(R.id.webView);
-        WebSettings webSettings=webView.getSettings();
+    private void setWebView() {
+        webView = findViewById(R.id.webView);
+        WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);//支持JS
         webSettings.setUseWideViewPort(true); //将图片调整到适合webview的大小
         webSettings.setLoadWithOverviewMode(true); // 缩放至屏幕的大小
@@ -45,29 +47,42 @@ public class LoginActivity extends AppCompatActivity {
 
         public boolean shouldOverrideUrlLoading(WebView webview, String url) {
             webview.loadUrl(url);
-            return super.shouldOverrideUrlLoading(webview,url);
+            return super.shouldOverrideUrlLoading(webview, url);
         }
 
         public void onPageFinished(WebView view, String url) {
             CookieManager cookieManager = CookieManager.getInstance();
             String CookieStr = cookieManager.getCookie(url);
-            Log.i("这是截取的Cookies", "Cookies = " + CookieStr);
+//            Log.e("这是截取的Cookies", "Cookies = " + CookieStr);
             super.onPageFinished(view, url);
         }
 
         @Override
-        public void onPageStarted(WebView view, String url, Bitmap favicon) {
-            String currentUrl=view.getUrl();
-            //TODO:shit
-            Log.i("这是截取的url", "url = " + currentUrl);
-            if(currentUrl.contains("oauth_verifier")&&(!currentUrl.contains("oauth_verifier=null"))){
-                Bundle bundle=new Bundle();
-                bundle.putString("callback",currentUrl);
-                Intent intent=new Intent(LoginActivity.this,MainActivity.class);
-                intent.putExtras(bundle);
-                startActivity(intent);
+        public void onPageStarted(WebView webView, String url, Bitmap bitmap) {
+            String returnUrl = webView.getUrl();
+//            Log.i("这是截取的url", "url = " + returnUrl);
+            if (returnUrl.contains("oauth_verifier") && (!returnUrl.contains("oauth_verifier=null"))) {
+                String oauth_token = subString(returnUrl, "oauth_token=", "&");
+                String oauth_verifier = subString(returnUrl + "#", "oauth_verifi.er=", "#");
+                Log.e("onPageStarted", oauth_token + "\n" + oauth_verifier);
+//                MQTTManager.getInstance().uploadPosition();
+                finish();
             }
-            super.onPageStarted(view, url, favicon);
+            super.onPageStarted(webView, url, bitmap);
         }
+    }
+
+    public String subString(String str, String strStart, String strEnd) {
+        int strStartIndex, strEndIndex;
+        String result = null;
+        try {
+            strStartIndex = str.indexOf(strStart);
+            strEndIndex = str.indexOf(strEnd);
+            result = str.substring(strStartIndex, strEndIndex).substring(strStart.length());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 }
