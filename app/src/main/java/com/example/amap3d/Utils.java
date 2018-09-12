@@ -3,6 +3,7 @@ package com.example.amap3d;
 import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -63,5 +64,14 @@ public class Utils {
 
     public static int getScreenHeight(Context context) {
         return context.getResources().getDisplayMetrics().heightPixels;
+    }
+
+    public static void uiLog(final String title, final String text){
+        MainActivity.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Log.e(title,text);
+            }
+        });
     }
 }

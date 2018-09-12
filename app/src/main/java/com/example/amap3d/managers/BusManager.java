@@ -3,13 +3,19 @@ package com.example.amap3d.managers;
 import android.content.Intent;
 import android.util.Log;
 
+import com.amap.api.maps.model.BitmapDescriptorFactory;
+import com.amap.api.maps.model.LatLng;
 import com.example.amap3d.LoginActivity;
 import com.example.amap3d.MainActivity;
+import com.example.amap3d.R;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.gsons.BusDataGson;
+import com.example.amap3d.gsons.BusMoveGson;
 import com.example.amap3d.gsons.BusPositionGson;
 import com.example.amap3d.Utils;
 import com.google.gson.reflect.TypeToken;
+
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +75,25 @@ public class BusManager {
         } catch (Exception e) {
             e.printStackTrace();
             Utils.uiToast("数据获取失败，请检查网络设置");
+        }
+    }
+
+    public void moveBus(MqttMessage message) {
+        try {
+            List<BusMoveGson> busMoveGsons = Utils.gson.fromJson(message.toString(), new TypeToken<List<BusMoveGson>>() {
+            }.getType());
+            for (BusMoveGson busMoveGson : busMoveGsons) {
+                String key = busMoveGson.getGPSDeviceIMEI();
+                LatLng latLng = Datas.busMarkerMap.get(key).getPosition();
+                double lat = latLng.latitude;
+                double lng = latLng.longitude;
+                Datas.busMarkerMap.get(key).setPosition(new LatLng(busMoveGson.getLat(), busMoveGson.getLng()));
+                Datas.busMarkerMap.get(key).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
+                AMapManager.getInstance().moveMarker(new LatLng[]{new LatLng(lat, lng), Datas.busMarkerMap.get(key).getPosition()}, key);
+            }
+//                    Log.e("messageArrived", Datas.busMarkerMap.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

@@ -140,7 +140,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                 wordCountTextView.setText("(" + content + "/30)");
             }
         });
-
+        //TODO:备注完成点击事件
         view.findViewById(R.id.completeButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -148,7 +148,6 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                 final String text = editText.getText().toString();
                 StorageManager.storage("positionRemark", text);
                 PeopleManager.getInstance().setRemark(text);
-//                MQTTManager.getInstance().uploadPosition();
             }
         });
 

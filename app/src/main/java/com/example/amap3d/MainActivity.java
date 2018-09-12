@@ -88,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
             AMapManager.getInstance().addPoints();
             MQTTManager.getInstance().linkMQTT(MQTTManager.getInstance().mqttCallback);
             PeopleManager.getInstance().getPeoplePosition();
+            PeopleManager.getInstance().getPeopleRemark();
             ViewManager.getInstance().refreshButton.setRefreshing(false);
             ViewManager.getInstance().isRefreshing = false;
         }
