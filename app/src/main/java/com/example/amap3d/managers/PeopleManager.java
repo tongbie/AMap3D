@@ -1,7 +1,6 @@
 package com.example.amap3d.managers;
 
 import android.content.Intent;
-import android.content.UriMatcher;
 import android.util.Log;
 
 import com.amap.api.maps.model.BitmapDescriptorFactory;
@@ -19,10 +18,8 @@ import com.google.gson.reflect.TypeToken;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -35,11 +32,11 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.internal.Util;
 
 public class PeopleManager {
     private static PeopleManager peopleManager;
     private OkHttpClient loginCheckClient;
+    private OkHttpClient getRemarkClient;
 
     public static PeopleManager getInstance() {
         if (peopleManager == null) {
@@ -48,7 +45,8 @@ public class PeopleManager {
         return peopleManager;
     }
 
-    public void getPeoplePosition() {
+    /*启动时获取位置列表*/
+    public void getAllPosition() {
         String url = "http://bus.mysdnu.cn/client";
         Request request = new Request.Builder()
                 .url(url)
@@ -60,10 +58,15 @@ public class PeopleManager {
             if (code == 200 && data != null) {
                 List<UploadPositionGson> uploadPositionGsonList = Utils.gson.fromJson(data, new TypeToken<List<UploadPositionGson>>() {
                 }.getType());
+                for (Map.Entry<String, Marker> entry : Datas.peopleMap.entrySet()) {
+                    entry.getValue().remove();
+                }
                 Datas.peopleMap.clear();
                 for (UploadPositionGson peopleGson : uploadPositionGsonList) {
                     LatLng latLng = new LatLng(Double.parseDouble(peopleGson.getLat()), Double.parseDouble(peopleGson.getLng()));
-                    Marker marker = AMapManager.aMap.addMarker(new MarkerOptions().position(latLng));
+                    Marker marker = AMapManager.aMap.addMarker(new MarkerOptions()
+                            .position(latLng)
+                            .title("ID" + peopleGson.getDeviceId()));
                     marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
                     Datas.peopleMap.put(peopleGson.getDeviceId(), marker);
                 }
@@ -113,24 +116,18 @@ public class PeopleManager {
 
     private ExecutorService uploadPostionService;
 
-    private OkHttpClient getClient() {
+    private OkHttpClient getLoginClient() {
         if (loginCheckClient == null) {
             loginCheckClient = new OkHttpClient.Builder()
                     .cookieJar(new CookieJar() {
-                        HashMap<String, List<Cookie>> cookieMap = new HashMap<>();
-
                         @Override
                         public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
-                            cookieMap.put(url.host(), cookies);
-//                            StorageManager.storage(url, cookies);
+                            StorageManager.storage(Datas.storageCookie, cookies);
                         }
 
                         @Override
                         public List<Cookie> loadForRequest(HttpUrl url) {
-//                            List<Cookie> cookieList = StorageManager.get(url);
-//                            return cookieList;
-                            List<Cookie> cookieList = cookieMap.get(url.host());
-                            return cookieList == null ? new ArrayList<Cookie>() : cookieList;
+                            return StorageManager.get(Datas.storageCookie, null);
                         }
                     })
                     .connectTimeout(10, TimeUnit.SECONDS)
@@ -140,7 +137,29 @@ public class PeopleManager {
         return loginCheckClient;
     }
 
-    private void attemptLogin() {
+    private OkHttpClient getRemarkClient() {
+        if (getRemarkClient == null) {
+            getRemarkClient = new OkHttpClient.Builder()
+                    .cookieJar(new CookieJar() {
+                        @Override
+                        public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
+
+                        }
+
+                        @Override
+                        public List<Cookie> loadForRequest(HttpUrl url) {
+                            return StorageManager.get(Datas.storageCookie, null);
+                        }
+                    })
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(10, TimeUnit.SECONDS)
+                    .build();
+        }
+        return getRemarkClient;
+    }
+
+    public void attemptLogin() {
+//        if (!Datas.isLogin) {
         String oauth_token = StorageManager.get("oauth_token");
         String oauth_verifier = StorageManager.get("oauth_verifier");
         if (oauth_token != null && oauth_verifier != null) {
@@ -153,30 +172,31 @@ public class PeopleManager {
                     .post(formBody)
                     .build();
             try {
-                Response response = getClient().newCall(request).execute();
+                Response response = getLoginClient().newCall(request).execute();
                 String code = String.valueOf(response.code());
                 String body = response.body().string();
-//                if(code.charAt(0)=='2'&&body.contains()){
-                Datas.isLogin = true;
-//                }
+                if (code.charAt(0) == '2' && body.contains("success")) {
+                    Datas.isLogin = true;
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+//        }
     }
 
     /*上传位置*/
-    public void setRemark(String text) {
+    public void uploadRemark(String text) {
         if (uploadPostionService == null) {
             uploadPostionService = Executors.newFixedThreadPool(1);
         }
-        uploadPostionService.submit(new SetRemarkRunnable(text));
+        uploadPostionService.submit(new UploadRemarkRunnable(text));
     }
 
-    private class SetRemarkRunnable implements Runnable {
+    private class UploadRemarkRunnable implements Runnable {
         String text;
 
-        public SetRemarkRunnable(String text) {
+        public UploadRemarkRunnable(String text) {
             this.text = text;
         }
 
@@ -184,7 +204,6 @@ public class PeopleManager {
         public void run() {
             try {
                 attemptLogin();
-                Log.e("SetRemarkRunnable", "start");
                 FormBody.Builder builder = new FormBody.Builder();
                 builder.add("remark", text);
                 RequestBody requestBody = builder.build();
@@ -192,15 +211,14 @@ public class PeopleManager {
                         .url("http://bus.mysdnu.cn/users/bind/" + MQTTManager.getInstance().deviceId)
                         .post(requestBody)
                         .build();
-                Response response = getClient().newCall(request).execute();
+                Response response = getLoginClient().newCall(request).execute();
                 String responseCode = String.valueOf(response.code());
                 String responseData = response.body().string();
                 if (responseCode.charAt(0) == '2' && responseData.contains("success")) {
-                    Utils.uiToast("备注成功");
                     uploadPosition();
                 } else if (responseData.contains("place login")) {
-                    deleteKey();
                     MainActivity.getActivity().startActivity(new Intent(MainActivity.getActivity(), LoginActivity.class));
+                    Datas.isLogin = false;
                 } else {
                     deleteKey();
                     Utils.uiToast("失败了...");
@@ -225,7 +243,9 @@ public class PeopleManager {
                 Datas.peopleMap.remove(deviceId);
             }
             LatLng latLng = new LatLng(Double.parseDouble(peopleGson.getLat()), Double.parseDouble(peopleGson.getLng()));
-            Marker marker = AMapManager.aMap.addMarker(new MarkerOptions().position(latLng));
+            Marker marker = AMapManager.aMap.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .title("ID" + deviceId));
             marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
             Datas.peopleMap.put(deviceId, marker);
         } catch (Exception e) {
@@ -236,27 +256,27 @@ public class PeopleManager {
     private void deleteKey() {
         StorageManager.delete("oauth_token");
         StorageManager.delete("oauth_verifier");
-        StorageManager.delete("cookie");
+        StorageManager.delete(Datas.storageCookie);
     }
 
-    public void getPeopleRemark() {
+    public void getPeopleRemark(String deviceId) {
         if (Datas.isLogin) {
             FormBody formBody = new FormBody.Builder()
-                    .add("deviceId", MQTTManager.deviceId)
+                    .add("deviceId", deviceId)
                     .build();
             Request request = new Request.Builder()
-                    .url("http://bus.mysdnu.cn/users/reportInfo/:deviceId")
+                    .url("http://bus.mysdnu.cn/users/reportInfo/" + deviceId)
                     .put(formBody)
                     .build();
             try {
-                Response response = Utils.client.newCall(request).execute();
+                Response response = getRemarkClient().newCall(request).execute();
                 String code = String.valueOf(response.code());
                 String data = response.body().string();
                 if (code.charAt(0) == '2' && data != null) {
                     Log.e("getPeopleRemark", data);
                     Utils.uiToast(data);
                 } else {
-                    throw new Exception("未获得数据");
+                    throw new Exception("未获得数据 " + code + " " + data);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

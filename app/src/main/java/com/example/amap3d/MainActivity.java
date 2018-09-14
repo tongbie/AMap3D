@@ -87,8 +87,8 @@ public class MainActivity extends AppCompatActivity {
             Datas.busPositionList = BusManager.getInstance().getBusPosition();
             AMapManager.getInstance().addPoints();
             MQTTManager.getInstance().linkMQTT(MQTTManager.getInstance().mqttCallback);
-            PeopleManager.getInstance().getPeoplePosition();
-            PeopleManager.getInstance().getPeopleRemark();
+            PeopleManager.getInstance().getAllPosition();
+            PeopleManager.getInstance().getPeopleRemark(MQTTManager.deviceId);
             ViewManager.getInstance().refreshButton.setRefreshing(false);
             ViewManager.getInstance().isRefreshing = false;
         }

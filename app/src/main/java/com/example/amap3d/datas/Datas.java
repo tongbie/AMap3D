@@ -18,6 +18,11 @@ public class Datas {
     public static HashMap<String, Marker> peopleMap = new HashMap<>();//人员位置
     public static HashMap<String, String> peopleRemarkList = new HashMap<>();//人员信息
 
+    public static final String storageRemark = "storageRemark";
+    public static final String storageCookie = "storageCookie";
+
+    public static boolean isLogin = false;
+
     public static void clear() {
         busInformationMap.clear();
         busMarkerMap.clear();
@@ -25,8 +30,6 @@ public class Datas {
         peopleMap.clear();
         peopleRemarkList.clear();
     }
-
-    public static boolean isLogin = false;
 
     public static void destroy() {
         clear();

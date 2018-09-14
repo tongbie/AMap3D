@@ -109,7 +109,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         final TextView wordCountTextView = view.findViewById(R.id.wordCountTextView);
         wordCountTextView.setText("(0/30)");
         final EditText editText = view.findViewById(R.id.uploadEditText);
-        String positionRemark = StorageManager.get("positionRemark");
+        String positionRemark = StorageManager.get(Datas.storageRemark);
         if (positionRemark != null) {
             editText.setText(positionRemark);
             wordCountTextView.setText("(" + positionRemark.length() + "/30)");
@@ -140,14 +140,13 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                 wordCountTextView.setText("(" + content + "/30)");
             }
         });
-        //TODO:备注完成点击事件
         view.findViewById(R.id.completeButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 popupWindow.dismiss();
                 final String text = editText.getText().toString();
-                StorageManager.storage("positionRemark", text);
-                PeopleManager.getInstance().setRemark(text);
+                StorageManager.storage(Datas.storageRemark, text);
+                PeopleManager.getInstance().uploadRemark(text);
             }
         });
 

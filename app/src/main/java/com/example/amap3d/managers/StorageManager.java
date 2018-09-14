@@ -3,15 +3,26 @@ package com.example.amap3d.managers;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.annotation.Nullable;
+import android.util.Log;
+import android.util.Xml;
 
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.Utils;
 
+import org.xmlpull.v1.XmlSerializer;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,12 +40,22 @@ public class StorageManager {
 
     }
 
+    /*写Cookie*/
     public static void storage(String key, List<Cookie> cookieList) {
         sharedPreferences = MainActivity.getActivity().getSharedPreferences(key, MODE_PRIVATE);
         editor = sharedPreferences.edit();
         try {
-            Cookie[] cookies = (Cookie[]) cookieList.toArray();
-            String objectString = serialize(cookies);
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            MyCookie[] myCookies = new MyCookie[cookieList.size()];
+            for (int i = 0; i < cookieList.size(); i++) {
+                myCookies[i] = new MyCookie(cookieList.get(i));
+            }
+            objectOutputStream.writeObject(myCookies);
+            String objectString = byteArrayOutputStream.toString("ISO-8859-1");
+            objectOutputStream.flush();
+            objectOutputStream.close();
+            byteArrayOutputStream.close();
             editor.putString(key, objectString);
             editor.commit();
         } catch (Exception e) {
@@ -43,21 +64,67 @@ public class StorageManager {
         }
     }
 
+    static class MyCookie implements Serializable {
+        public MyCookie(Cookie cookie) {
+            this.name = cookie.name();
+            this.value = cookie.value();
+            this.expiresAt = cookie.expiresAt();
+            this.domain = cookie.domain();
+            this.path = cookie.path();
+            this.secure = cookie.secure();
+            this.httpOnly = cookie.httpOnly();
+            this.hostOnly = cookie.hostOnly();
+            this.persistent = cookie.persistent();
+        }
+
+        public Cookie getCookie() {
+            Cookie cookie = null;
+            Constructor constructor;
+            try {
+                constructor = Cookie.class
+                        .getDeclaredConstructor(String.class, String.class, long.class, String.class, String.class,
+                                boolean.class, boolean.class, boolean.class, boolean.class);
+                constructor.setAccessible(true);
+                cookie = (Cookie) constructor.newInstance(name, value, expiresAt, domain, path, secure, httpOnly, hostOnly, persistent);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return cookie;
+        }
+
+        public String name;
+        public String value;
+        public long expiresAt;
+        public String domain;
+        public String path;
+        public boolean secure;
+        public boolean httpOnly;
+        public boolean hostOnly;
+        public boolean persistent;
+    }
+
+    /*拿Cookie*/
     public static List<Cookie> get(String key, @Nullable Object obj) {
         sharedPreferences = MainActivity.getActivity().getSharedPreferences(key, MODE_PRIVATE);
         String content = sharedPreferences.getString(key, null);
-        Cookie[] cookies = null;
+        List<Cookie> cookieList = new ArrayList<>();
+        ObjectInputStream objectInputStream = null;
+        ByteArrayInputStream byteArrayInputStream = null;
+        MyCookie[] myCookies = null;
         try {
-            cookies = (Cookie[]) deserialize(content);
+            byteArrayInputStream = new ByteArrayInputStream(content.getBytes("ISO-8859-1"));
+            objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            Object object = objectInputStream.readObject();
+            myCookies = (MyCookie[]) object;
+            for (int i = 0; i < myCookies.length; i++) {
+                cookieList.add(myCookies[i].getCookie());
+            }
+            objectInputStream.close();
+            byteArrayInputStream.close();
         } catch (Exception e) {
+            Utils.uiToast("反序列化失败" + e.getMessage());
             e.printStackTrace();
-            Utils.uiToast("反序列化失败\n" + e.getMessage());
-        }
-        List<Cookie> cookieList;
-        if (cookies == null) {
-            cookieList = new ArrayList<>();
-        } else {
-            cookieList = Arrays.asList(cookies);
+            return cookieList;
         }
         return cookieList;
     }
@@ -80,36 +147,5 @@ public class StorageManager {
         editor = sharedPreferences.edit();
         editor.remove(key);
         editor.commit();
-    }
-
-    public static String serialize(Object object) throws Exception {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-        objectOutputStream.writeObject(object);
-        String str = byteArrayOutputStream.toString("ISO-8859-1");
-        objectOutputStream.close();
-        byteArrayOutputStream.close();
-        return str;
-    }
-
-    public static Object deserialize(String string) throws Exception {
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(string.getBytes("ISO-8859-1"));
-        ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
-        Object object = objectInputStream.readObject();
-        byteArrayInputStream.close();
-        objectInputStream.close();
-        return object;
-    }
-
-    public static void storage(HttpUrl httpUrl, List<Cookie> cookieList) {
-        PersistentCookieStore persistentCookieStore = new PersistentCookieStore(MainActivity.getActivity());
-        for (Cookie cookie : cookieList) {
-            persistentCookieStore.add(httpUrl, cookie);
-        }
-    }
-
-    public static List<Cookie> get(HttpUrl httpUrl) {
-        List<Cookie> cookieList = new PersistentCookieStore(MainActivity.getActivity()).get(httpUrl);
-        return cookieList == null ? new ArrayList<Cookie>() : cookieList;
     }
 }

@@ -141,7 +141,6 @@ public class AMapManager {
                     .setPositiveButton("取消", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-
                             dialog.dismiss();
                         }
                     }).create();
@@ -153,6 +152,23 @@ public class AMapManager {
     public AMap.OnMarkerClickListener markerClickListener = new AMap.OnMarkerClickListener() {
         @Override
         public boolean onMarkerClick(Marker marker) {
+            String title = marker.getTitle();
+            if (title == null) {
+                return true;
+            } else if (title.contains("ID")) {
+                final String deviceId = title.substring(2);
+                if (marker.getSnippet() == null) {
+                    if (!Datas.isLogin) {
+                        marker.setSnippet("登录后可查看信息");
+                    }
+                    MainActivity.getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            PeopleManager.getInstance().getPeopleRemark(deviceId);
+                        }
+                    });
+                }
+            }
             if (marker.isInfoWindowShown()) {
                 marker.hideInfoWindow();
             } else {
@@ -172,7 +188,10 @@ public class AMapManager {
             for (BusPositionGson busPosition : Datas.busPositionList) {
                 String key = busPosition.getGPSDeviceIMEI();
                 LatLng latLng = new LatLng(Double.parseDouble(busPosition.getLat()), Double.parseDouble(busPosition.getLng()));
-                Marker marker = aMap.addMarker(new MarkerOptions().position(latLng).title(Datas.busInformationMap.get(key)[0]).snippet(Datas.busInformationMap.get(key)[1]));
+                Marker marker = aMap.addMarker(new MarkerOptions()
+                        .position(latLng)
+                        .title(Datas.busInformationMap.get(key)[0])
+                        .snippet(Datas.busInformationMap.get(key)[1]));
                 marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus1));
                 Datas.busMarkerMap.put(key, marker);
             }
@@ -180,10 +199,6 @@ public class AMapManager {
             e.printStackTrace();
             Utils.uiToast(e.getMessage());
         }
-    }
-
-    public void addPeople() {
-
     }
 
     /* 设置平滑移动点 */
@@ -197,8 +212,8 @@ public class AMapManager {
         Datas.busMarkerMap.get(key).setVisible(false);
         smoothMarker.setMoveListener(new SmoothMoveMarker.MoveListener() {
             @Override
-            public void move(double v) {
-                if (v == 0) {//参数v为距终点距离
+            public void move(double distance) {
+                if (distance == 0) {
                     smoothMarker.stopMove();
                     smoothMarker.removeMarker();
                     Datas.busMarkerMap.get(key).setVisible(true);

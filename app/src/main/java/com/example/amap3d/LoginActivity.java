@@ -11,6 +11,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import com.example.amap3d.managers.PeopleManager;
 import com.example.amap3d.managers.StorageManager;
 
 public class LoginActivity extends AppCompatActivity {
@@ -47,16 +48,6 @@ public class LoginActivity extends AppCompatActivity {
             return super.shouldOverrideUrlLoading(webview, url);
         }
 
-//        public void onPageFinished(WebView view, String url) {
-//            CookieManager cookieManager = CookieManager.getInstance();
-//            String cookie = cookieManager.getCookie(url);
-//            if (cookie != null) {
-//                Log.e("Cookie",cookie);
-//                StorageManager.storage("cookie", cookie);
-//            }
-//            super.onPageFinished(view, url);
-//        }
-
         @Override
         public void onPageStarted(WebView webView, String url, Bitmap bitmap) {
             String returnUrl = webView.getUrl();
@@ -66,11 +57,10 @@ public class LoginActivity extends AppCompatActivity {
                     if (oauthKeys[0] != null && oauthKeys[1] != null) {
                         StorageManager.storage("oauth_token", oauthKeys[0]);
                         StorageManager.storage("oauth_verifier", oauthKeys[1]);
+                        PeopleManager.getInstance().attemptLogin();
                     }
-//                    Log.e("onPageStarted", /*"\n" + returnUrl + */"\n" + oauthKeys[0] + "\n" + oauthKeys[1]);
                 } catch (Exception e) {
                     e.printStackTrace();
-//                    Log.e("onPageStartedError", e.getMessage());
                 }
                 finish();
             }
