@@ -14,6 +14,7 @@ import com.example.amap3d.managers.MQTTManager;
 import com.example.amap3d.managers.PeopleManager;
 import com.example.amap3d.managers.UpdateManager;
 import com.example.amap3d.managers.ViewManager;
+import com.example.amap3d.utils.Utils;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -84,11 +85,10 @@ public class MainActivity extends AppCompatActivity {
         public void run() {
             MQTTManager.getInstance().isShowMoving = true;
             BusManager.getInstance().setBusInformationToMap();
-            Datas.busPositionList = BusManager.getInstance().getBusPosition();
-            AMapManager.getInstance().addPoints();
+            Datas.busPositionList = BusManager.getInstance().requireBusPosition();
+            AMapManager.getInstance().addBusMarker();
             MQTTManager.getInstance().linkMQTT(MQTTManager.getInstance().mqttCallback);
             PeopleManager.getInstance().getAllPosition();
-            PeopleManager.getInstance().getPeopleRemark(MQTTManager.deviceId);
             ViewManager.getInstance().refreshButton.setRefreshing(false);
             ViewManager.getInstance().isRefreshing = false;
         }

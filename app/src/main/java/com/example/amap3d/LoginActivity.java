@@ -4,32 +4,32 @@ import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.webkit.CookieManager;
+import android.view.ViewGroup;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 
 import com.example.amap3d.managers.PeopleManager;
 import com.example.amap3d.managers.StorageManager;
 
 public class LoginActivity extends AppCompatActivity {
-    WebView webView;
+    private WebView webView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        setWebView();
+        initWebView();
     }
 
-    private void setWebView() {
+    private void initWebView() {
         webView = findViewById(R.id.webView);
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);//支持JS
-        webSettings.setUseWideViewPort(true); //将图片调整到适合webview的大小
-        webSettings.setLoadWithOverviewMode(true); //缩放至屏幕的大小
+        webSettings.setUseWideViewPort(true);//将图片调整到适合webview的大小
+        webSettings.setLoadWithOverviewMode(true);//缩放至屏幕的大小
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         //调用重构的WebViewClient
         webView.setWebViewClient(new MyWebViewClient() {
@@ -57,7 +57,7 @@ public class LoginActivity extends AppCompatActivity {
                     if (oauthKeys[0] != null && oauthKeys[1] != null) {
                         StorageManager.storage("oauth_token", oauthKeys[0]);
                         StorageManager.storage("oauth_verifier", oauthKeys[1]);
-                        PeopleManager.getInstance().attemptLogin();
+//                        PeopleManager.getInstance().attemptLogin();
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -83,5 +83,17 @@ public class LoginActivity extends AppCompatActivity {
             oauthKeys[1] = splittedString.substring(splittedString.indexOf("oauth_verifier=") + "oauth_verifier=".length());
         }
         return oauthKeys;
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (webView != null) {
+            webView.loadDataWithBaseURL(null, "", "text/html", "utf-8", null);
+            webView.clearHistory();
+            ((ViewGroup) webView.getParent()).removeView(webView);
+            webView.destroy();
+            webView = null;
+        }
+        super.onDestroy();
     }
 }

@@ -15,7 +15,7 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.amap3d.Utils;
+import com.example.amap3d.utils.Utils;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.views.ScrollLayout;
@@ -37,7 +37,6 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
     private ExecutorService executorService;
 
     public boolean isRefreshing = false;
-    private boolean isWriteAble = true;
 
     private ViewManager() {
         executorService = Executors.newFixedThreadPool(1);
@@ -134,9 +133,6 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
             @Override
             public void afterTextChanged(Editable s) {
                 int content = editText.getText().length();
-                if (content > 30) {
-                    isWriteAble = false;
-                }
                 wordCountTextView.setText("(" + content + "/30)");
             }
         });
@@ -199,5 +195,9 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
     @Override
     public void scrollDownEnd() {
         textView.setText("上滑查看班车时刻");
+    }
+
+    private void requireBusTimeTable(){
+
     }
 }

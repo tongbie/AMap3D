@@ -10,7 +10,8 @@ import com.amap.api.maps.model.MarkerOptions;
 import com.example.amap3d.LoginActivity;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.R;
-import com.example.amap3d.Utils;
+import com.example.amap3d.gsons.PeopleRemarkGson;
+import com.example.amap3d.utils.Utils;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.gsons.UploadPositionGson;
 import com.google.gson.reflect.TypeToken;
@@ -95,8 +96,8 @@ public class PeopleManager {
                     MQTTManager.getInstance().publish(uploadPositionTitle, uploadPositionJson, true);
                 }
             });
-            Utils.uiToast("位置上传中...");
         }
+        Utils.uiToast("位置上传中...");
     }
 
     /*destroy*/
@@ -159,33 +160,35 @@ public class PeopleManager {
     }
 
     public void attemptLogin() {
-//        if (!Datas.isLogin) {
-        String oauth_token = StorageManager.get("oauth_token");
-        String oauth_verifier = StorageManager.get("oauth_verifier");
-        if (oauth_token != null && oauth_verifier != null) {
-            FormBody formBody = new FormBody.Builder()
-                    .add("oauth_token", oauth_token)
-                    .add("oauth_verifier", oauth_verifier)
-                    .build();
-            Request request = new Request.Builder()
-                    .url("http://bus.mysdnu.cn/login")
-                    .post(formBody)
-                    .build();
-            try {
-                Response response = getLoginClient().newCall(request).execute();
-                String code = String.valueOf(response.code());
-                String body = response.body().string();
-                if (code.charAt(0) == '2' && body.contains("success")) {
-                    Datas.isLogin = true;
+        if (!Datas.isLogin) {
+            String oauth_token = StorageManager.get("oauth_token");
+            String oauth_verifier = StorageManager.get("oauth_verifier");
+            if (oauth_token != null && oauth_verifier != null) {
+                FormBody formBody = new FormBody.Builder()
+                        .add("oauth_token", oauth_token)
+                        .add("oauth_verifier", oauth_verifier)
+                        .build();
+                Request request = new Request.Builder()
+                        .url("http://bus.mysdnu.cn/login")
+                        .post(formBody)
+                        .build();
+                try {
+                    Response response = getLoginClient().newCall(request).execute();
+                    String code = String.valueOf(response.code());
+                    String body = response.body().string();
+                    Log.e("attemptLogin", body);
+                    if (code.charAt(0) == '2') {
+                        Datas.isLogin = true;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    deleteKey();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
-//        }
     }
 
-    /*上传位置*/
+    /*上传备注*/
     public void uploadRemark(String text) {
         if (uploadPostionService == null) {
             uploadPostionService = Executors.newFixedThreadPool(1);
@@ -230,14 +233,13 @@ public class PeopleManager {
         }
     }
 
-    public void upload(MqttMessage message) {
+    private UploadPositionGson peopleGson;
+
+    public void mqttUpload(MqttMessage message) {
         try {
             String data = message.toString();
-            UploadPositionGson peopleGson = Utils.gson.fromJson(data, UploadPositionGson.class);
+            peopleGson = Utils.gson.fromJson(data, UploadPositionGson.class);
             String deviceId = peopleGson.getDeviceId();
-            if (MQTTManager.deviceId.equals(deviceId)) {
-                return;
-            }
             if (Datas.peopleMap.containsKey(deviceId)) {
                 Datas.peopleMap.get(deviceId).remove();
                 Datas.peopleMap.remove(deviceId);
@@ -259,29 +261,44 @@ public class PeopleManager {
         StorageManager.delete(Datas.storageCookie);
     }
 
-    public void getPeopleRemark(String deviceId) {
-        if (Datas.isLogin) {
-            FormBody formBody = new FormBody.Builder()
-                    .add("deviceId", deviceId)
-                    .build();
-            Request request = new Request.Builder()
-                    .url("http://bus.mysdnu.cn/users/reportInfo/" + deviceId)
-                    .put(formBody)
-                    .build();
-            try {
-                Response response = getRemarkClient().newCall(request).execute();
-                String code = String.valueOf(response.code());
-                String data = response.body().string();
-                if (code.charAt(0) == '2' && data != null) {
-                    Log.e("getPeopleRemark", data);
-                    Utils.uiToast(data);
-                } else {
-                    throw new Exception("未获得数据 " + code + " " + data);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                Utils.uiToast("获取人员信息失败");
+    public String requireRemark(String deviceId, final Marker marker) {
+        String remark = "";
+        Request request = new Request.Builder()
+                .url("http://bus.mysdnu.cn/users/reportInfo/" + deviceId)
+                .build();
+        try {
+            Response response = getRemarkClient().newCall(request).execute();
+            String code = String.valueOf(response.code());
+            String data = response.body().string();
+            if (code.charAt(0) == '2' && data != null) {
+                PeopleRemarkGson peopleRemarkGson = Utils.gson.fromJson(data, PeopleRemarkGson.class);
+                remark = peopleRemarkGson.getRemark();
+                final String finalRemark = remark;
+                MainActivity.getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        marker.setSnippet(finalRemark);
+                        String deviceId = marker.getTitle().substring(2);
+                        LatLng latLng = marker.getPosition();
+                        Datas.peopleMap.get(deviceId).remove();
+                        Datas.peopleMap.remove(deviceId);
+                        Marker newMarker = AMapManager.aMap.addMarker(new MarkerOptions()
+                                .position(latLng)
+                                .snippet(finalRemark)
+                                .title("ID" + deviceId));
+                        newMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
+                        Datas.peopleMap.put(deviceId, newMarker);
+                        newMarker.showInfoWindow();
+                    }
+                });
+
+            } else {
+                throw new Exception("未获得数据 " + code + " " + data);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Utils.uiToast("获取人员信息失败");
         }
+        return remark;
     }
 }

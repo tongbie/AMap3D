@@ -21,7 +21,7 @@ import com.example.amap3d.BuildConfig;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.managers.UpdateManager;
 import com.example.amap3d.R;
-import com.example.amap3d.Utils;
+import com.example.amap3d.utils.Utils;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -64,10 +64,6 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".bustimetable.BusTimetableActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
-        <activity
             android:name=".views.DialogActivity"
             android:label="有可用的更新"
             android:theme="@style/DialogTheme" />
@@ -91,7 +87,6 @@
         <activity android:name=".LoginActivity">
 
         </activity>
-        <activity android:name=".UploadPositionInformationActivity"></activity>
     </application>
 
 </manifest>

@@ -1,31 +1,22 @@
 package com.example.amap3d.managers;
 
-import android.content.Intent;
-import android.util.Log;
-
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
-import com.example.amap3d.LoginActivity;
-import com.example.amap3d.MainActivity;
 import com.example.amap3d.R;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.gsons.BusDataGson;
 import com.example.amap3d.gsons.BusMoveGson;
 import com.example.amap3d.gsons.BusPositionGson;
-import com.example.amap3d.Utils;
+import com.example.amap3d.utils.Utils;
 import com.google.gson.reflect.TypeToken;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
-import okhttp3.FormBody;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 
 /**
@@ -98,7 +89,7 @@ public class BusManager {
     }
 
     /* 获取校车位置 */
-    public synchronized List<BusPositionGson> getBusPosition() {
+    public synchronized List<BusPositionGson> requireBusPosition() {
         List<BusPositionGson> busPositionList = null;
         try {
             Request request = new Request.Builder()

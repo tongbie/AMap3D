@@ -30,17 +30,10 @@ import com.example.amap3d.datas.Datas;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.gsons.BusPositionGson;
 import com.example.amap3d.R;
-import com.example.amap3d.Utils;
-import com.example.amap3d.gsons.UploadPositionGson;
+import com.example.amap3d.utils.Utils;
 import com.example.amap3d.views.MapViewContainerView;
-import com.google.gson.reflect.TypeToken;
 
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
-
-import okhttp3.Request;
-import okhttp3.Response;
 
 /**
  * Created by BieTong on 2018/3/20.
@@ -151,22 +144,19 @@ public class AMapManager {
     /* 校车标记点击事件，用以弹窗 */
     public AMap.OnMarkerClickListener markerClickListener = new AMap.OnMarkerClickListener() {
         @Override
-        public boolean onMarkerClick(Marker marker) {
-            String title = marker.getTitle();
+        public boolean onMarkerClick(final Marker marker) {
+            final String title = marker.getTitle();
             if (title == null) {
                 return true;
             } else if (title.contains("ID")) {
-                final String deviceId = title.substring(2);
-                if (marker.getSnippet() == null) {
-                    if (!Datas.isLogin) {
-                        marker.setSnippet("登录后可查看信息");
-                    }
-                    MainActivity.getActivity().runOnUiThread(new Runnable() {
+                if(!marker.isInfoWindowShown()) {
+                    new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            PeopleManager.getInstance().getPeopleRemark(deviceId);
+                            final String deviceId = title.substring(2);
+                            PeopleManager.getInstance().requireRemark(deviceId, marker);
                         }
-                    });
+                    }).start();
                 }
             }
             if (marker.isInfoWindowShown()) {
@@ -179,7 +169,7 @@ public class AMapManager {
     };
 
     /* 添加校车定位点 */
-    public synchronized void addPoints() {
+    public synchronized void addBusMarker() {
         if (Datas.busPositionList == null) {
             Utils.uiToast("校车位置获取失败");
             return;
@@ -226,7 +216,7 @@ public class AMapManager {
         aMap.clear();
     }
 
-    private boolean isFirstMove = true;//用以判断在启动时移动地图至定位点
+    public boolean isFirstMove = true;//用以判断在启动时移动地图至定位点
 
     private double lat = 0, lng = 0;
 
@@ -241,21 +231,19 @@ public class AMapManager {
                     isFirstMove = false;
                 }
                 if (onPositionChangedListener != null) {
-//                    if (location.getLatitude() != lat && location.getLongitude() != lng) {
-                    lat = location.getLatitude();
-                    lng = location.getLongitude();
-                    onPositionChangedListener.onPositionChanged(lng, lat);
-//                    }
+                    if (location.getLatitude() != lat && location.getLongitude() != lng) {
+                        lat = location.getLatitude();
+                        lng = location.getLongitude();
+                        onPositionChangedListener.onPositionChanged(lng, lat);
+                    }
                 }
             }
         });
         aMap.setOnMarkerClickListener(markerClickListener);
-
-        UiSettings mUiSettings;//地图不可旋转，3D
+        UiSettings mUiSettings;
         mUiSettings = aMap.getUiSettings();
         mUiSettings.setRotateGesturesEnabled(false);
         mUiSettings.setTiltGesturesEnabled(false);
-
         aMap.setInfoWindowAdapter(infoWindowAdapter);
         aMap.setOnInfoWindowClickListener(infoWindowClickListener);
     }

@@ -1,4 +1,4 @@
-package com.example.amap3d;
+package com.example.amap3d.utils;
 
 import android.app.Activity;
 import android.content.Context;
@@ -8,6 +8,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import com.example.amap3d.MainActivity;
 import com.google.gson.Gson;
 
 import java.util.concurrent.TimeUnit;

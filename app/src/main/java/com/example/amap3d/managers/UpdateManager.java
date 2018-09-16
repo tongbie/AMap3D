@@ -10,7 +10,7 @@ import android.support.v7.app.AlertDialog;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.gsons.ApkVersionGson;
 import com.example.amap3d.services.DownloadService;
-import com.example.amap3d.Utils;
+import com.example.amap3d.utils.Utils;
 
 import java.util.List;
 

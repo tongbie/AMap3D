@@ -4,7 +4,7 @@ import android.os.Build;
 import android.util.Log;
 
 import com.example.amap3d.gsons.MQTTAccountGson;
-import com.example.amap3d.Utils;
+import com.example.amap3d.utils.Utils;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -66,7 +66,7 @@ public class MQTTManager {
     /* 连接MQTT服务器 */
     public synchronized void linkMQTT(MqttCallback mqttCallback) {
         if (mqttClient != null && mqttClient.isConnected()) {
-            Utils.uiToast("服务器已连接");
+//            Utils.uiToast("服务器已连接");
             return;
         }
         try {
@@ -136,7 +136,6 @@ public class MQTTManager {
         @Override
         public void connectionLost(Throwable cause) {
             Utils.uiToast("失去连接，请刷新重试");
-//            Log.e("MqttConnectionLost", cause.getCause().getMessage());
         }
 
         @Override
@@ -144,7 +143,7 @@ public class MQTTManager {
             if (isShowMoving && topic.equals(mqttTopic)) {
                 BusManager.getInstance().moveBus(message);
             } else if (topic.equals(PeopleManager.getInstance().uploadPositionTitle)) {
-                PeopleManager.getInstance().upload(message);
+                PeopleManager.getInstance().mqttUpload(message);
             }
         }
 
