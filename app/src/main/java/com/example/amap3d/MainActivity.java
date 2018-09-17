@@ -49,8 +49,13 @@ public class MainActivity extends AppCompatActivity {
         if (AMapManager.aMap == null) {
             AMapManager.aMap = AMapManager.mapView.getMap();
         }
-        AMapManager.getInstance().setAMap();
-        AMapManager.getInstance().setLocationStyle();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                AMapManager.getInstance().setAMap();
+                AMapManager.getInstance().setLocationStyle();
+            }
+        }).start();
     }
 
     public void update(final String text) {

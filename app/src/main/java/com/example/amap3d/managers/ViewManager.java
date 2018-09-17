@@ -34,13 +34,10 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
     public TextView textView;
     public RecyclerView recyclerView;
     public PopupWindow popupWindow;
-    private ExecutorService executorService;
 
     public boolean isRefreshing = false;
 
-    private ViewManager() {
-        executorService = Executors.newFixedThreadPool(1);
-    }
+    private ViewManager() {}
 
     public static ViewManager getInstance() {
         if (viewManager == null) {
@@ -50,18 +47,23 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
     }
 
     public void initView() {
-        refreshButton = MainActivity.getActivity().findViewById(R.id.refreshButton);
-        refreshButton.setOnClickListener(this);
-        MainActivity.getActivity().findViewById(R.id.menuButton).setOnClickListener(this);
-        textView = MainActivity.getActivity().findViewById(R.id.textView);
-        scrollLayout = MainActivity.getActivity().findViewById(R.id.othersScrollLayout);
-        scrollLayout.setOnScrollLayoutStateChangeListener(this);
-        recyclerView = MainActivity.getActivity().findViewById(R.id.recycleView);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(MainActivity.getActivity());
-        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        recyclerView.setLayoutManager(linearLayoutManager);
-        initPopupMenu();
-        initUploadPositionRemarkWindow();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                refreshButton = MainActivity.getActivity().findViewById(R.id.refreshButton);
+                refreshButton.setOnClickListener(ViewManager.this);
+                MainActivity.getActivity().findViewById(R.id.menuButton).setOnClickListener(ViewManager.this);
+                textView = MainActivity.getActivity().findViewById(R.id.textView);
+                scrollLayout = MainActivity.getActivity().findViewById(R.id.othersScrollLayout);
+                scrollLayout.setOnScrollLayoutStateChangeListener(ViewManager.this);
+                recyclerView = MainActivity.getActivity().findViewById(R.id.recycleView);
+                LinearLayoutManager linearLayoutManager = new LinearLayoutManager(MainActivity.getActivity());
+                linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+                recyclerView.setLayoutManager(linearLayoutManager);
+                initPopupMenu();
+                initUploadPositionRemarkWindow();
+            }
+        }).start();
     }
 
     private void initPopupMenu() {
