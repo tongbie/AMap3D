@@ -10,6 +10,7 @@ import android.widget.LinearLayout;
 import android.widget.Scroller;
 
 import com.example.amap3d.R;
+import com.example.amap3d.managers.AMapManager;
 
 public class ScrollLayout extends LinearLayout {
     private int oldY, currentY, distanceY;
@@ -123,7 +124,7 @@ public class ScrollLayout extends LinearLayout {
         return super.onTouchEvent(event);
     }
 
-    public void open(){
+    public void open() {
         scroller.startScroll(0, getScrollY(), 0, (scrollMaxHeight - getScrollY()));
         setScrollListenerUp(true);
         invalidate();
@@ -140,13 +141,13 @@ public class ScrollLayout extends LinearLayout {
         }
     }
 
-    private void setScrollListenerUp(boolean isUp){
+    private void setScrollListenerUp(boolean isUp) {
         if (onScrollLayoutStateChangeListener == null) {
             return;
         }
-        if(isUp){
+        if (isUp) {
             onScrollLayoutStateChangeListener.startingScrollUp();
-        }else {
+        } else {
             onScrollLayoutStateChangeListener.scrollDownEnd();
         }
     }
@@ -160,9 +161,9 @@ public class ScrollLayout extends LinearLayout {
 
     public interface OnScrollLayoutStateChangeListener {
 
-        public void startingScrollUp();
+        void startingScrollUp();
 
-        public void scrollDownEnd();
+        void scrollDownEnd();
     }
 }
 

@@ -54,19 +54,11 @@ public class MQTTManager {
                 Build.MODEL.length() % 10 + Build.PRODUCT.length() % 10 +
                 Build.TAGS.length() % 10 + Build.TYPE.length() % 10 +
                 Build.USER.length() % 10;
-
-//        try {
-//            mqttClient = new MqttClient(linkMqttURL, deviceId, new MemoryPersistence());
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            Utils.uiToast("服务器连接失败");
-//        }
     }
 
     /* 连接MQTT服务器 */
     public synchronized void linkMQTT(MqttCallback mqttCallback) {
         if (mqttClient != null && mqttClient.isConnected()) {
-//            Utils.uiToast("服务器已连接");
             return;
         }
         try {
@@ -77,7 +69,6 @@ public class MQTTManager {
             String responseData = response.body().string();
             String responseCode = String.valueOf(response.code());
             if (responseData != null && responseCode.charAt(0) == '2') {
-                try {
                     MQTTAccountGson account = Utils.gson.fromJson(responseData, MQTTAccountGson.class);
                     String username = account.getUsername();
                     String password = account.getPassword();
@@ -89,15 +80,12 @@ public class MQTTManager {
                     mqttClient.connect(mqttOptions);
                     subscribeTopic(mqttTopic, 0);
                     subscribeTopic(PeopleManager.getInstance().uploadPositionTitle, 0);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Utils.uiToast("连接服务器失败");
-                }
             }
         } catch (SocketTimeoutException e) {
             Utils.uiToast("连接超时，请检查网络设置");
         } catch (Exception e) {
             e.printStackTrace();
+            Utils.uiToast("连接服务器失败");
         }
     }
 

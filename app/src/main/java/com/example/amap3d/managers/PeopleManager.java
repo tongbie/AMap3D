@@ -47,34 +47,29 @@ public class PeopleManager {
     }
 
     /*启动时获取位置列表*/
-    public void getAllPosition() {
+    public void requireAllPosition() throws Exception{
         String url = "http://bus.mysdnu.cn/client";
         Request request = new Request.Builder()
                 .url(url)
                 .build();
-        try {
-            Response response = Utils.client.newCall(request).execute();
-            String data = response.body().string();
-            int code = response.code();
-            if (code == 200 && data != null) {
-                List<UploadPositionGson> uploadPositionGsonList = Utils.gson.fromJson(data, new TypeToken<List<UploadPositionGson>>() {
-                }.getType());
-                for (Map.Entry<String, Marker> entry : Datas.peopleMap.entrySet()) {
-                    entry.getValue().remove();
-                }
-                Datas.peopleMap.clear();
-                for (UploadPositionGson peopleGson : uploadPositionGsonList) {
-                    LatLng latLng = new LatLng(Double.parseDouble(peopleGson.getLat()), Double.parseDouble(peopleGson.getLng()));
-                    Marker marker = AMapManager.aMap.addMarker(new MarkerOptions()
-                            .position(latLng)
-                            .title("ID" + peopleGson.getDeviceId()));
-                    marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
-                    Datas.peopleMap.put(peopleGson.getDeviceId(), marker);
-                }
+        Response response = Utils.client.newCall(request).execute();
+        String data = response.body().string();
+        int code = response.code();
+        if (code == 200 && data != null) {
+            List<UploadPositionGson> uploadPositionGsonList = Utils.gson.fromJson(data, new TypeToken<List<UploadPositionGson>>() {
+            }.getType());
+            for (Map.Entry<String, Marker> entry : Datas.peopleMap.entrySet()) {
+                entry.getValue().remove();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Utils.uiToast("位置列表获取失败");
+            Datas.peopleMap.clear();
+            for (UploadPositionGson peopleGson : uploadPositionGsonList) {
+                LatLng latLng = new LatLng(Double.parseDouble(peopleGson.getLat()), Double.parseDouble(peopleGson.getLng()));
+                Marker marker = AMapManager.aMap.addMarker(new MarkerOptions()
+                        .position(latLng)
+                        .title("ID" + peopleGson.getDeviceId()));
+                marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
+                Datas.peopleMap.put(peopleGson.getDeviceId(), marker);
+            }
         }
     }
 
@@ -255,7 +250,7 @@ public class PeopleManager {
         }
     }
 
-    private void deleteKey() {
+    public void deleteKey() {
         StorageManager.delete("oauth_token");
         StorageManager.delete("oauth_verifier");
         StorageManager.delete(Datas.storageCookie);
@@ -291,9 +286,10 @@ public class PeopleManager {
                         newMarker.showInfoWindow();
                     }
                 });
-
+            } else if (data.contains("place login")) {
+                Utils.uiToast("登录后可查看人员信息");
             } else {
-                throw new Exception("未获得数据 " + code + " " + data);
+                Utils.uiToast("获取人员信息失败");
             }
         } catch (Exception e) {
             e.printStackTrace();

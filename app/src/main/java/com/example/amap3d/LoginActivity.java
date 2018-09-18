@@ -1,10 +1,13 @@
 package com.example.amap3d;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.ViewGroup;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -21,7 +24,27 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        judgeClearCache();
         initWebView();
+    }
+
+    private void judgeClearCache(){
+        Intent intent = getIntent();
+        Bundle bundle = intent.getExtras();
+        if(bundle!=null){
+            int isLogOut=bundle.getInt("isLogOut");
+            if(isLogOut==1){
+                CookieSyncManager.createInstance(this);
+                CookieManager cookieManager = CookieManager.getInstance();
+                cookieManager.removeAllCookie();
+                CookieSyncManager.getInstance().sync();
+                webView = findViewById(R.id.webView);
+                webView.setWebChromeClient(null);
+                webView.setWebViewClient(null);
+                webView.getSettings().setJavaScriptEnabled(false);
+                webView.clearCache(true);
+            }
+        }
     }
 
     private void initWebView() {

@@ -39,33 +39,22 @@ public class BusManager {
     }
 
     /* 获取校车信息 */
-    public synchronized void setBusInformationToMap() {
-        try {
-            Request request = new Request.Builder()
-                    .url(busDataURL)
-                    .build();
-            Response response = Utils.client.newCall(request).execute();
-            String responseData = response.body().string();
-            String responseCode = String.valueOf(response.code());
-            if (responseData != null && responseCode.charAt(0) == '2') {
-                try {
-                    List<BusDataGson> busDatas = Utils.gson.fromJson(responseData, new TypeToken<List<BusDataGson>>() {
-                    }.getType());
-                    for (BusDataGson busData : busDatas) {
-                        String key = busData.getGPSDeviceIMEI();
-                        String title = busData.getBus_lineName() + "\n" + busData.getBus_departureSite();
-                        String snippet = Pattern.compile("[^0-9]").matcher(busData.getBus_arriveSite()).replaceAll("");
-                        Datas.busInformationMap.put(key, new String[]{title, snippet});
-                    }
-//                    Log.e("busInformationMap", Datas.busInformationMap.toString());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Utils.uiToast("校车信息异常");
-                }
+    public synchronized void requireBusInformation() throws Exception {
+        Request request = new Request.Builder()
+                .url(busDataURL)
+                .build();
+        Response response = Utils.client.newCall(request).execute();
+        String responseData = response.body().string();
+        String responseCode = String.valueOf(response.code());
+        if (responseData != null && responseCode.charAt(0) == '2') {
+            List<BusDataGson> busDatas = Utils.gson.fromJson(responseData, new TypeToken<List<BusDataGson>>() {
+            }.getType());
+            for (BusDataGson busData : busDatas) {
+                String key = busData.getGPSDeviceIMEI();
+                String title = busData.getBus_lineName() + "\n" + busData.getBus_departureSite();
+                String snippet = Pattern.compile("[^0-9]").matcher(busData.getBus_arriveSite()).replaceAll("");
+                Datas.busInformationMap.put(key, new String[]{title, snippet});
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Utils.uiToast("数据获取失败，请检查网络设置");
         }
     }
 
@@ -89,27 +78,17 @@ public class BusManager {
     }
 
     /* 获取校车位置 */
-    public synchronized List<BusPositionGson> requireBusPosition() {
+    public synchronized List<BusPositionGson> requireBusPosition() throws Exception{
         List<BusPositionGson> busPositionList = null;
-        try {
-            Request request = new Request.Builder()
-                    .url(busPositionURL)
-                    .build();
-            Response response = Utils.client.newCall(request).execute();
-            String responseData = response.body().string();
-            String responseCode = String.valueOf(response.code());
-            if (responseData != null && responseCode.charAt(0) == '2') {
-                try {
-                    busPositionList = Utils.gson.fromJson(responseData, new TypeToken<List<BusPositionGson>>() {
-                    }.getType());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Utils.uiToast("位置数据异常");
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Utils.uiToast("数据获取失败");
+        Request request = new Request.Builder()
+                .url(busPositionURL)
+                .build();
+        Response response = Utils.client.newCall(request).execute();
+        String responseData = response.body().string();
+        String responseCode = String.valueOf(response.code());
+        if (responseData != null && responseCode.charAt(0) == '2') {
+            busPositionList = Utils.gson.fromJson(responseData, new TypeToken<List<BusPositionGson>>() {
+            }.getType());
         }
         return busPositionList == null ? new ArrayList<BusPositionGson>() : busPositionList;
     }

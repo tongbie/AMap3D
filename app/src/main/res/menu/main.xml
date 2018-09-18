@@ -10,4 +10,7 @@
     <item
         android:id="@+id/uploadPosition"
         android:title="上传位置"/>
+    <item
+        android:id="@+id/logOut"
+        android:title="退出登录"/>
 </menu>

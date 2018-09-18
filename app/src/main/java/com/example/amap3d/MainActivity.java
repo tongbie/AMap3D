@@ -88,14 +88,18 @@ public class MainActivity extends AppCompatActivity {
     private Runnable getAllDataRunnable =new Runnable() {
         @Override
         public void run() {
-            MQTTManager.getInstance().isShowMoving = true;
-            BusManager.getInstance().setBusInformationToMap();
-            Datas.busPositionList = BusManager.getInstance().requireBusPosition();
-            AMapManager.getInstance().addBusMarker();
-            MQTTManager.getInstance().linkMQTT(MQTTManager.getInstance().mqttCallback);
-            PeopleManager.getInstance().getAllPosition();
-            ViewManager.getInstance().refreshButton.setRefreshing(false);
-            ViewManager.getInstance().isRefreshing = false;
+            try {
+                MQTTManager.getInstance().isShowMoving = true;
+                BusManager.getInstance().requireBusInformation();
+                Datas.busPositionList = BusManager.getInstance().requireBusPosition();
+                AMapManager.getInstance().addBusMarker();
+                MQTTManager.getInstance().linkMQTT(MQTTManager.getInstance().mqttCallback);
+                PeopleManager.getInstance().requireAllPosition();
+                ViewManager.getInstance().refreshButton.setRefreshing(false);
+                ViewManager.getInstance().isRefreshing = false;
+            }catch (Exception e){
+                Utils.uiToast("数据获取失败");
+            }
         }
     };
 

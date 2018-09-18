@@ -43,6 +43,7 @@ public class AMapManager {
     private static AMapManager aMapManager;
     public static AMap aMap;
     public static MapView mapView;
+    private MapViewContainerView mapViewContainerView;
 
     private AMapManager() {
     }
@@ -56,8 +57,13 @@ public class AMapManager {
 
     public void initMapView(Bundle savedInstanceState) {
         AMapManager.mapView = new MapView(MainActivity.getActivity());
-        ((MapViewContainerView) MainActivity.getActivity().findViewById(R.id.mapViewContainerView)).addView(AMapManager.mapView);
+        mapViewContainerView = MainActivity.getActivity().findViewById(R.id.mapViewContainerView);
+        mapViewContainerView.addView(AMapManager.mapView);
         AMapManager.mapView.onCreate(savedInstanceState);
+    }
+
+    public void setHeight(int height) {
+        mapViewContainerView.layout(0, 0, mapViewContainerView.getMeasuredWidth(), height);
     }
 
     /* 设置定位模式 */
@@ -149,7 +155,7 @@ public class AMapManager {
             if (title == null) {
                 return true;
             } else if (title.contains("ID")) {
-                if(!marker.isInfoWindowShown()) {
+                if (!marker.isInfoWindowShown()) {
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -169,25 +175,20 @@ public class AMapManager {
     };
 
     /* 添加校车定位点 */
-    public synchronized void addBusMarker() {
+    public synchronized void addBusMarker() throws Exception {
         if (Datas.busPositionList == null) {
             Utils.uiToast("校车位置获取失败");
             return;
         }
-        try {
-            for (BusPositionGson busPosition : Datas.busPositionList) {
-                String key = busPosition.getGPSDeviceIMEI();
-                LatLng latLng = new LatLng(Double.parseDouble(busPosition.getLat()), Double.parseDouble(busPosition.getLng()));
-                Marker marker = aMap.addMarker(new MarkerOptions()
-                        .position(latLng)
-                        .title(Datas.busInformationMap.get(key)[0])
-                        .snippet(Datas.busInformationMap.get(key)[1]));
-                marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus1));
-                Datas.busMarkerMap.put(key, marker);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Utils.uiToast(e.getMessage());
+        for (BusPositionGson busPosition : Datas.busPositionList) {
+            String key = busPosition.getGPSDeviceIMEI();
+            LatLng latLng = new LatLng(Double.parseDouble(busPosition.getLat()), Double.parseDouble(busPosition.getLng()));
+            Marker marker = aMap.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .title(Datas.busInformationMap.get(key)[0])
+                    .snippet(Datas.busInformationMap.get(key)[1]));
+            marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus1));
+            Datas.busMarkerMap.put(key, marker);
         }
     }
 

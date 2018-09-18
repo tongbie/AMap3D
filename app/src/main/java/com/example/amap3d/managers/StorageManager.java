@@ -28,35 +28,6 @@ public class StorageManager {
     public static void storage(String key, List<Cookie> cookieList) {
         sharedPreferences = MainActivity.getActivity().getSharedPreferences(key, MODE_PRIVATE);
         editor = sharedPreferences.edit();
-//        try {
-//            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-//            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-//            MyCookie[] myCookies = new MyCookie[cookieList.size()];
-//            for (int i = 0; i < cookieList.size(); i++) {
-//                Cookie cookie = cookieList.get(i);
-//                MyCookie myCookie = new MyCookie();
-//                myCookie.name = cookie.name();
-//                myCookie.value = cookie.value();
-//                myCookie.expiresAt = cookie.expiresAt();
-//                myCookie.domain = cookie.domain().toCharArray();//有毒
-//                myCookie.path = cookie.path();//有毒
-//                myCookie.secure = cookie.secure();
-//                myCookie.httpOnly = cookie.httpOnly();
-//                myCookie.hostOnly = cookie.hostOnly();
-//                myCookie.persistent = cookie.persistent();
-//                myCookies[i] = myCookie;
-//            }
-//            objectOutputStream.writeObject(myCookies);
-//            String objectString = byteArrayOutputStream.toString("ISO-8859-1");
-//            objectOutputStream.flush();
-//            objectOutputStream.close();
-//            byteArrayOutputStream.close();
-//            editor.putString(key, objectString);
-//            editor.apply();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            Utils.uiToast("序列化失败\n" + e.getMessage());
-//        }
         List<CookieGson> cookieGsonList = new ArrayList<>();
         for (Cookie cookie : cookieList) {
             CookieGson cookieGson = new CookieGson(cookie);
@@ -70,28 +41,6 @@ public class StorageManager {
     /*拿Cookie*/
     public static List<Cookie> get(String key, @Nullable Object obj) {
         sharedPreferences = MainActivity.getActivity().getSharedPreferences(key, MODE_PRIVATE);
-//        String objectString = sharedPreferences.getString(key, null);
-//        List<Cookie> cookieList = new ArrayList<>();
-//        ObjectInputStream objectInputStream = null;
-//        ByteArrayInputStream byteArrayInputStream = null;
-//        MyCookie[] myCookies;
-//        try {
-//            assert objectString != null;
-//            byteArrayInputStream = new ByteArrayInputStream(objectString.getBytes("ISO-8859-1"));
-//            objectInputStream = new ObjectInputStream(byteArrayInputStream);
-//            Object object = objectInputStream.readObject();
-//            myCookies = (MyCookie[]) object;
-//            for (MyCookie myCooky : myCookies) {
-//                cookieList.add(myCooky.createCookie());
-//            }
-//            objectInputStream.close();
-//            byteArrayInputStream.close();
-//        } catch (Exception e) {
-//            Utils.uiToast("反序列化失败" + e.getMessage());
-//            e.printStackTrace();
-//            return cookieList;
-//        }
-//        return cookieList;
         String cookieString = sharedPreferences.getString(key, null);
         List<Cookie> cookieList = new ArrayList<>();
         if (cookieString != null) {
