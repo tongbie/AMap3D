@@ -1,5 +1,6 @@
 package com.example.amap3d;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
@@ -21,6 +22,7 @@ import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
+    @SuppressLint("StaticFieldLeak")
     private static Activity activity;
     private ExecutorService refreshExecutorService;
 

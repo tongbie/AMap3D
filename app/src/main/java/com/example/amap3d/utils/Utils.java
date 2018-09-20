@@ -48,6 +48,7 @@ public class Utils {
     public static boolean checkNetworkState(Context context) {
         boolean flag = false;
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        assert connectivityManager != null;
         if (connectivityManager.getActiveNetworkInfo() != null) {
             flag = connectivityManager.getActiveNetworkInfo().isAvailable();
         }
@@ -61,18 +62,5 @@ public class Utils {
 
     public static int getScreenWidth(Context context) {
         return context.getResources().getDisplayMetrics().widthPixels;
-    }
-
-    public static int getScreenHeight(Context context) {
-        return context.getResources().getDisplayMetrics().heightPixels;
-    }
-
-    public static void uiLog(final String title, final String text){
-        MainActivity.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Log.e(title,text);
-            }
-        });
     }
 }

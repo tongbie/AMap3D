@@ -25,7 +25,6 @@ import com.example.amap3d.utils.Utils;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +35,6 @@ import okhttp3.Response;
 
 public class DownloadService extends Service {
     private static NotificationManager notificationManager;
-    private static boolean isFirstCommand = true;
     private PowerManager.WakeLock wakeLock = null;
     private String channelId = "1";
     private int downloadNotificationId = 10;
@@ -45,16 +43,14 @@ public class DownloadService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (isFirstCommand) {
-            initNotificationManager();
-            requireWakeLock();
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    downloadApk();
-                }
-            }).start();
-        }
+        initNotificationManager();
+        requireWakeLock();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                downloadApk();
+            }
+        }).start();
         if (intent == null) {
             notificationManager.cancelAll();
         }
@@ -64,9 +60,10 @@ public class DownloadService extends Service {
     private void requireWakeLock() {
         if (null == wakeLock) {
             PowerManager powerManager = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+            assert powerManager != null;
             wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "PostLocationService");
             if (null != wakeLock) {
-                wakeLock.acquire();
+                wakeLock.acquire(10*60*1000L);
             }
         }
     }
@@ -107,8 +104,6 @@ public class DownloadService extends Service {
                 installApk(file);
                 isExist = true;
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -161,7 +156,7 @@ public class DownloadService extends Service {
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(Call call, Response response) {
                 InputStream inputStream = null;
                 FileOutputStream fileOutputStream = null;
                 try {

@@ -1,5 +1,6 @@
 package com.example.amap3d.views;
 
+import android.annotation.SuppressLint;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,7 +23,7 @@ public class TimetableAdapter extends RecyclerView.Adapter<TimetableAdapter.View
 
     @Override
     public TimetableAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(MainActivity.getActivity()).inflate(R.layout.item_timetable, null);
+        @SuppressLint("InflateParams") View view = LayoutInflater.from(MainActivity.getActivity()).inflate(R.layout.item_timetable, null);
         return new ViewHolder(view);
     }
 
@@ -39,12 +40,12 @@ public class TimetableAdapter extends RecyclerView.Adapter<TimetableAdapter.View
         return timetableList.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    class ViewHolder extends RecyclerView.ViewHolder {
         TextView placeTextView;
         TextView dateTextView;
         TextView timeTextView;
 
-        public ViewHolder(View itemView) {
+        ViewHolder(View itemView) {
             super(itemView);
             placeTextView = itemView.findViewById(R.id.placeTextView);
             dateTextView = itemView.findViewById(R.id.dateTextView);

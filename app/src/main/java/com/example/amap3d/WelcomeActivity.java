@@ -23,11 +23,9 @@ public class WelcomeActivity extends AppCompatActivity {
         requestPermissions();
     }
 
-    private List<String> permissionList;
-
     private void requestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            permissionList = new ArrayList<>();
+            List<String> permissionList = new ArrayList<>();
             if (ContextCompat.checkSelfPermission(WelcomeActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 permissionList.add(Manifest.permission.ACCESS_FINE_LOCATION);
             }
@@ -52,8 +50,8 @@ public class WelcomeActivity extends AppCompatActivity {
         switch (requestCode) {
             case 0x000:
                 boolean isAllPermissionAgreed = true;
-                for (int i = 0; i < permissions.length; i++) {
-                    if (ContextCompat.checkSelfPermission(WelcomeActivity.this, permissions[i]) != PackageManager.PERMISSION_GRANTED) {
+                for (String permission : permissions) {
+                    if (ContextCompat.checkSelfPermission(WelcomeActivity.this, permission) != PackageManager.PERMISSION_GRANTED) {
                         isAllPermissionAgreed = false;
                     }
                 }

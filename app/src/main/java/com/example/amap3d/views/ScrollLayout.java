@@ -1,5 +1,6 @@
 package com.example.amap3d.views;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
@@ -10,10 +11,10 @@ import android.widget.LinearLayout;
 import android.widget.Scroller;
 
 import com.example.amap3d.R;
-import com.example.amap3d.managers.AMapManager;
 
 public class ScrollLayout extends LinearLayout {
-    private int oldY, currentY, distanceY;
+    private int oldY;
+    private int distanceY;
     private View childView;
     private Scroller scroller;
     private int scrollMaxHeight;
@@ -66,18 +67,16 @@ public class ScrollLayout extends LinearLayout {
     }
 
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 oldY = (int) event.getY();
                 //如果子View不在顶部 && 按下的位置在子View没有显示的位置，则不消费此次滑动事件，否则消费
-                if (!isChildViewAtTop && oldY < scrollMaxHeight) {
-                    return super.onTouchEvent(event);
-                }
-                return true;
+                return isChildViewAtTop || oldY >= scrollMaxHeight || super.onTouchEvent(event);
             case MotionEvent.ACTION_MOVE:
-                currentY = (int) event.getY();
+                int currentY = (int) event.getY();
                 int dy = oldY - currentY;
                 if (dy > 0) {
                     distanceY += dy;

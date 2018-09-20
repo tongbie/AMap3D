@@ -1,5 +1,6 @@
 package com.example.amap3d.views;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -15,7 +16,6 @@ import com.example.amap3d.R;
 public class MenuButton extends android.support.v7.widget.AppCompatButton {
     private Paint paint = new Paint();
 
-    private int width;
     private int height;
 
     public MenuButton(Context context) {
@@ -82,10 +82,11 @@ public class MenuButton extends android.support.v7.widget.AppCompatButton {
         }
     }
 
+    @SuppressLint("DrawAllocation")
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        width = getWidth();
+        int width = getWidth();
         height = getHeight();
         oldXs = new int[]{width / 7 * 2, width / 2, width / 7 * 5};
         newXs = new int[]{width / 7 * 2, width / 2, width / 7 * 5};

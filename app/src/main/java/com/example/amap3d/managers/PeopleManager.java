@@ -16,7 +16,6 @@ import com.example.amap3d.datas.Datas;
 import com.example.amap3d.gsons.UploadPositionGson;
 import com.google.gson.reflect.TypeToken;
 
-import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.util.List;
@@ -47,7 +46,7 @@ public class PeopleManager {
     }
 
     /*启动时获取位置列表*/
-    public void requireAllPosition() throws Exception{
+    public void requireAllPosition() throws Exception {
         String url = "http://bus.mysdnu.cn/client";
         Request request = new Request.Builder()
                 .url(url)
@@ -55,7 +54,7 @@ public class PeopleManager {
         Response response = Utils.client.newCall(request).execute();
         String data = response.body().string();
         int code = response.code();
-        if (code == 200 && data != null) {
+        if (code == 200) {
             List<UploadPositionGson> uploadPositionGsonList = Utils.gson.fromJson(data, new TypeToken<List<UploadPositionGson>>() {
             }.getType());
             for (Map.Entry<String, Marker> entry : Datas.peopleMap.entrySet()) {
@@ -73,7 +72,7 @@ public class PeopleManager {
         }
     }
 
-    public UploadPositionGson uploadPositionGson;
+    private UploadPositionGson uploadPositionGson;
 
     public static final String uploadPositionTitle = "clientLocation";
 
@@ -103,8 +102,6 @@ public class PeopleManager {
             if (MQTTManager.getInstance().mqttClient != null) {
                 MQTTManager.getInstance().mqttClient.unsubscribe(uploadPositionTitle);
             }
-        } catch (MqttException e) {
-            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -123,7 +120,7 @@ public class PeopleManager {
 
                         @Override
                         public List<Cookie> loadForRequest(HttpUrl url) {
-                            return StorageManager.get(Datas.storageCookie, null);
+                            return StorageManager.getCookieList(Datas.storageCookie);
                         }
                     })
                     .connectTimeout(10, TimeUnit.SECONDS)
@@ -144,7 +141,7 @@ public class PeopleManager {
 
                         @Override
                         public List<Cookie> loadForRequest(HttpUrl url) {
-                            return StorageManager.get(Datas.storageCookie, null);
+                            return StorageManager.getCookieList(Datas.storageCookie);
                         }
                     })
                     .connectTimeout(10, TimeUnit.SECONDS)
@@ -154,7 +151,7 @@ public class PeopleManager {
         return getRemarkClient;
     }
 
-    public void attemptLogin() {
+    private void attemptLogin() {
         if (!Datas.isLogin) {
             String oauth_token = StorageManager.get("oauth_token");
             String oauth_verifier = StorageManager.get("oauth_verifier");
@@ -194,7 +191,7 @@ public class PeopleManager {
     private class UploadRemarkRunnable implements Runnable {
         String text;
 
-        public UploadRemarkRunnable(String text) {
+        UploadRemarkRunnable(String text) {
             this.text = text;
         }
 
@@ -206,7 +203,7 @@ public class PeopleManager {
                 builder.add("remark", text);
                 RequestBody requestBody = builder.build();
                 Request request = new Request.Builder()
-                        .url("http://bus.mysdnu.cn/users/bind/" + MQTTManager.getInstance().deviceId)
+                        .url("http://bus.mysdnu.cn/users/bind/" + MQTTManager.deviceId)
                         .post(requestBody)
                         .build();
                 Response response = getLoginClient().newCall(request).execute();
@@ -228,22 +225,29 @@ public class PeopleManager {
         }
     }
 
-    private UploadPositionGson peopleGson;
-
     public void mqttUpload(MqttMessage message) {
         try {
             String data = message.toString();
-            peopleGson = Utils.gson.fromJson(data, UploadPositionGson.class);
+            UploadPositionGson peopleGson = Utils.gson.fromJson(data, UploadPositionGson.class);
             String deviceId = peopleGson.getDeviceId();
+            boolean isShowingInfoWindow = false;
             if (Datas.peopleMap.containsKey(deviceId)) {
-                Datas.peopleMap.get(deviceId).remove();
+                Marker marker = Datas.peopleMap.get(deviceId);
+                if (marker.isInfoWindowShown()) {
+                    isShowingInfoWindow = true;
+                }
+                marker.remove();
                 Datas.peopleMap.remove(deviceId);
             }
             LatLng latLng = new LatLng(Double.parseDouble(peopleGson.getLat()), Double.parseDouble(peopleGson.getLng()));
             Marker marker = AMapManager.aMap.addMarker(new MarkerOptions()
                     .position(latLng)
+                    .snippet(Datas.currentInfoWindowRemark)
                     .title("ID" + deviceId));
             marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
+            if (isShowingInfoWindow) {
+                marker.showInfoWindow();
+            }
             Datas.peopleMap.put(deviceId, marker);
         } catch (Exception e) {
             e.printStackTrace();
@@ -256,8 +260,8 @@ public class PeopleManager {
         StorageManager.delete(Datas.storageCookie);
     }
 
-    public String requireRemark(String deviceId, final Marker marker) {
-        String remark = "";
+    public void requireRemark(String deviceId, final Marker marker) {
+        String remark;
         Request request = new Request.Builder()
                 .url("http://bus.mysdnu.cn/users/reportInfo/" + deviceId)
                 .build();
@@ -265,9 +269,10 @@ public class PeopleManager {
             Response response = getRemarkClient().newCall(request).execute();
             String code = String.valueOf(response.code());
             String data = response.body().string();
-            if (code.charAt(0) == '2' && data != null) {
+            if (code.charAt(0) == '2') {
                 PeopleRemarkGson peopleRemarkGson = Utils.gson.fromJson(data, PeopleRemarkGson.class);
                 remark = peopleRemarkGson.getRemark();
+                Datas.currentInfoWindowRemark = remark;
                 final String finalRemark = remark;
                 MainActivity.getActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -287,14 +292,13 @@ public class PeopleManager {
                     }
                 });
             } else if (data.contains("place login")) {
-                Utils.uiToast("登录后可查看人员信息");
+                Utils.uiToast("上传位置后可查看人员信息");
             } else {
-                Utils.uiToast("获取人员信息失败");
+                throw new RuntimeException("PeopleManager.requireRemark");
             }
         } catch (Exception e) {
             e.printStackTrace();
             Utils.uiToast("获取人员信息失败");
         }
-        return remark;
     }
 }

@@ -63,10 +63,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".views.DialogActivity"
-            android:label="有可用的更新"
-            android:theme="@style/DialogTheme" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"

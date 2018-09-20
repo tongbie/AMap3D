@@ -18,6 +18,8 @@ public class Datas {
     public static HashMap<String, Marker> peopleMap = new HashMap<>();//人员位置
     public static HashMap<String, String> peopleRemarkList = new HashMap<>();//人员信息
 
+    public static String currentInfoWindowRemark = "";
+
     public static final String storageRemark = "storageRemark";
     public static final String storageCookie = "storageCookie";
 

@@ -18,11 +18,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.amap3d.LoginActivity;
+import com.example.amap3d.R;
 import com.example.amap3d.utils.Utils;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.views.ScrollLayout;
-import com.example.amap3d.R;
 import com.example.amap3d.views.MenuButton;
 import com.example.amap3d.views.RefreshButton;
 import com.example.amap3d.views.TimetableAdapter;
@@ -37,13 +37,13 @@ import java.util.List;
 import java.util.Map;
 
 public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollLayoutStateChangeListener {
+    @SuppressLint("StaticFieldLeak")
     private static ViewManager viewManager;
-    public PopupMenu popupMenu;
+    private PopupMenu popupMenu;
     public RefreshButton refreshButton;
-    public ScrollLayout scrollLayout;
+    private ScrollLayout scrollLayout;
     public TextView textView;
-    public RecyclerView recyclerView;
-    public PopupWindow popupWindow;
+    private PopupWindow popupWindow;
 
     public boolean isRefreshing = false;
 
@@ -226,12 +226,10 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         decodeJson(data);
     }
 
-    private List<Map<String, String>> timetableList;
-
     private void decodeJson(String result) {
         if (result.length() == 0)
             return;
-        timetableList = new ArrayList<>();
+        List<Map<String, String>> timetableList = new ArrayList<>();
         try {
             JSONObject jsonObject = new JSONObject(result);
             Iterator<?> it = jsonObject.keys();
@@ -250,7 +248,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                     timetableList.add(timetable);
                 }
             }
-            recyclerView = MainActivity.getActivity().findViewById(R.id.recycleView);
+            RecyclerView recyclerView = MainActivity.getActivity().findViewById(R.id.recycleView);
             LinearLayoutManager linearLayoutManager = new LinearLayoutManager(MainActivity.getActivity());
             linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
             recyclerView.setLayoutManager(linearLayoutManager);

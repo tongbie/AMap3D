@@ -30,10 +30,10 @@ public class UpdateManager {
     public static final String downloadFileName = "SchoolBusQuery.apk";
 
     public static final int UPDATE_NOT_NEED = 0;
-    public static final int UPDATA_CLIENT = 1;
-    public static final int UPDATE_FORCE = 2;
-    public static final int UPDATE_LOCAL_VERSION_ERROR = 3;
-    public static final int UPDATE_SERVICE_VERSION_ERROR = 4;
+    private static final int UPDATA_CLIENT = 1;
+    private static final int UPDATE_FORCE = 2;
+    private static final int UPDATE_LOCAL_VERSION_ERROR = 3;
+    private static final int UPDATE_SERVICE_VERSION_ERROR = 4;
 
     private UpdateManager() {
 
@@ -56,8 +56,8 @@ public class UpdateManager {
             response = Utils.client.newCall(request).execute();
             String responseData = response.body().string();
             String responseCode = String.valueOf(response.code());
-            int versionCode = -1;
-            if (responseData != null && responseCode.charAt(0) == '2') {
+            int versionCode;
+            if (responseCode.charAt(0) == '2') {
                 try {
                     versionCode = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionCode;
                 } catch (PackageManager.NameNotFoundException e) {
@@ -74,12 +74,12 @@ public class UpdateManager {
                 //TODO:updateType
                 if (versionCode < minVersionCode /*|| updateType.equals("updateType")*/) {
                     versionState[0] = UPDATE_FORCE;
-                    updateDescription = "更新时间:" + apkVersionGson.getUpdateTime() == "" ? "暂无" : apkVersionGson.getUpdateTime()
-                            + "\n更新日志：\n" + apkVersionGson.getDescription() == "" ? "暂无" : apkVersionGson.getDescription();
+                    updateDescription = ("更新时间:" + apkVersionGson.getUpdateTime()).equals("") ? "暂无" : (apkVersionGson.getUpdateTime()
+                            + "\n更新日志：\n" + apkVersionGson.getDescription()).equals("") ? "暂无" : apkVersionGson.getDescription();
                 } else if (versionCode < packageVersionCode) {
                     versionState[0] = UPDATA_CLIENT;
-                    updateDescription = "更新时间:" + apkVersionGson.getUpdateTime() == "" ? "暂无" : apkVersionGson.getUpdateTime()
-                            + "\n更新日志：\n" + apkVersionGson.getDescription() == "" ? "暂无" : apkVersionGson.getDescription();
+                    updateDescription = ("更新时间:" + apkVersionGson.getUpdateTime()).equals("") ? "暂无" : (apkVersionGson.getUpdateTime()
+                            + "\n更新日志：\n" + apkVersionGson.getDescription()).equals("") ? "暂无" : apkVersionGson.getDescription();
                 } else {
                     versionState[0] = UPDATE_NOT_NEED;
                 }
@@ -111,7 +111,7 @@ public class UpdateManager {
     }
 
     private void showUpdataDialog(final boolean isForceUpdate) {
-        if (isServiceWorking(MainActivity.getActivity().getApplicationContext(), "com.example.amap3d.Services.DownloadService")) {
+        if (isServiceWorking(MainActivity.getActivity().getApplicationContext())) {
             Utils.uiToast("更新下载中...");
             return;
         }
@@ -124,7 +124,6 @@ public class UpdateManager {
             public void onClick(DialogInterface dialog, int which) {
                 if (isForceUpdate) {
                     MainActivity.getActivity().finish();
-                    return;
                 }
             }
         });
@@ -143,17 +142,17 @@ public class UpdateManager {
         });
     }
 
-    public boolean isServiceWorking(Context context, String serviceName) {
+    private boolean isServiceWorking(Context context) {
         boolean isWork = false;
         ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        assert activityManager != null;
         List<ActivityManager.RunningServiceInfo> runningServiceInfoList = activityManager.getRunningServices(Integer.MAX_VALUE);
         if (runningServiceInfoList.size() <= 0) {
             return false;
         }
         for (int i = 0; i < runningServiceInfoList.size(); i++) {
-            String mName = runningServiceInfoList.get(i).service.getClassName().toString();
-//            Log.e("Service", mName);
-            if (mName.equals(serviceName)) {
+            String mName = runningServiceInfoList.get(i).service.getClassName();
+            if (mName.equals("com.example.amap3d.Services.DownloadService")) {
                 isWork = true;
                 break;
             }

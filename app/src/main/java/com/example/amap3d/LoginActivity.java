@@ -1,5 +1,6 @@
 package com.example.amap3d;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.http.SslError;
@@ -12,9 +13,7 @@ import android.webkit.SslErrorHandler;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Toast;
 
-import com.example.amap3d.managers.PeopleManager;
 import com.example.amap3d.managers.StorageManager;
 
 public class LoginActivity extends AppCompatActivity {
@@ -47,6 +46,7 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     private void initWebView() {
         webView = findViewById(R.id.webView);
         WebSettings webSettings = webView.getSettings();

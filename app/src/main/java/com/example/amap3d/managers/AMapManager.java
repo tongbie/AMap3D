@@ -1,13 +1,14 @@
 package com.example.amap3d.managers;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
-import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -15,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.CameraUpdateFactory;
@@ -43,7 +45,6 @@ public class AMapManager {
     private static AMapManager aMapManager;
     public static AMap aMap;
     public static MapView mapView;
-    private MapViewContainerView mapViewContainerView;
 
     private AMapManager() {
     }
@@ -57,13 +58,9 @@ public class AMapManager {
 
     public void initMapView(Bundle savedInstanceState) {
         AMapManager.mapView = new MapView(MainActivity.getActivity());
-        mapViewContainerView = MainActivity.getActivity().findViewById(R.id.mapViewContainerView);
+        MapViewContainerView mapViewContainerView = MainActivity.getActivity().findViewById(R.id.mapViewContainerView);
         mapViewContainerView.addView(AMapManager.mapView);
         AMapManager.mapView.onCreate(savedInstanceState);
-    }
-
-    public void setHeight(int height) {
-        mapViewContainerView.layout(0, 0, mapViewContainerView.getMeasuredWidth(), height);
     }
 
     /* 设置定位模式 */
@@ -81,7 +78,7 @@ public class AMapManager {
     }
 
     /* 校车信息弹窗 */
-    public AMap.InfoWindowAdapter infoWindowAdapter = new AMap.ImageInfoWindowAdapter() {
+    private AMap.InfoWindowAdapter infoWindowAdapter = new AMap.ImageInfoWindowAdapter() {
         View infoWindow = null;
 
         @Override
@@ -95,6 +92,7 @@ public class AMapManager {
         }
 
         /* 自定义校车详情弹窗 */
+        @SuppressLint("InflateParams")
         @Override
         public View getInfoContents(Marker marker) {
             if (infoWindow == null) {
@@ -111,7 +109,7 @@ public class AMapManager {
     };
 
     /* 校车信息弹窗点击事件，用以拨号 */
-    public AMap.OnInfoWindowClickListener infoWindowClickListener = new AMap.OnInfoWindowClickListener() {
+    private AMap.OnInfoWindowClickListener infoWindowClickListener = new AMap.OnInfoWindowClickListener() {
         @Override
         public void onInfoWindowClick(Marker marker) {
             final String num = marker.getSnippet();
@@ -129,11 +127,12 @@ public class AMapManager {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             if (ContextCompat.checkSelfPermission(MainActivity.getActivity(), Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-                                ActivityCompat.requestPermissions(MainActivity.getActivity(), new String[]{android.Manifest.permission.CALL_PHONE}, 0x003);
+                                ActivityCompat.requestPermissions(MainActivity.getActivity(), new String[]{Manifest.permission.CALL_PHONE}, 0x003);
                             } else {
-                                Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + num));
-                                MainActivity.getActivity().startActivity(intent);
-                                dialog.dismiss();
+//                                Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + num));
+//                                MainActivity.getActivity().startActivity(intent);
+//                                dialog.dismiss();
+                                Toast.makeText(MainActivity.getActivity(), "测试版暂时关闭拨号功能", Toast.LENGTH_SHORT).show();
                             }
                         }
                     })
@@ -148,7 +147,7 @@ public class AMapManager {
     };
 
     /* 校车标记点击事件，用以弹窗 */
-    public AMap.OnMarkerClickListener markerClickListener = new AMap.OnMarkerClickListener() {
+    private AMap.OnMarkerClickListener markerClickListener = new AMap.OnMarkerClickListener() {
         @Override
         public boolean onMarkerClick(final Marker marker) {
             final String title = marker.getTitle();
@@ -175,7 +174,7 @@ public class AMapManager {
     };
 
     /* 添加校车定位点 */
-    public synchronized void addBusMarker() throws Exception {
+    public synchronized void addBusMarker() {
         if (Datas.busPositionList == null) {
             Utils.uiToast("校车位置获取失败");
             return;
@@ -217,9 +216,24 @@ public class AMapManager {
         aMap.clear();
     }
 
-    public boolean isFirstMove = true;//用以判断在启动时移动地图至定位点
+    private boolean isFirstMove = true;//用以判断在启动时移动地图至定位点
 
     private double lat = 0, lng = 0;
+
+    private long lastUploadTime = 0;
+
+    private Handler tiemHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            tiemHandler.sendEmptyMessageDelayed(0, 5000);
+            long currentTime = System.currentTimeMillis();
+            if (onPositionChangedListener != null && (currentTime - lastUploadTime) > 5000) {
+                onPositionChangedListener.onPositionChanged(lng, lat);
+                lastUploadTime = currentTime;
+            }
+            return false;
+        }
+    });
 
     /*设置aMap对象*/
     public void setAMap() {
@@ -236,6 +250,7 @@ public class AMapManager {
                         lat = location.getLatitude();
                         lng = location.getLongitude();
                         onPositionChangedListener.onPositionChanged(lng, lat);
+                        lastUploadTime = System.currentTimeMillis();
                     }
                 }
             }
@@ -265,5 +280,6 @@ public class AMapManager {
 
     public void setOnPositionChangedListener(OnPositionChangedListener onPositionChangedListener) {
         this.onPositionChangedListener = onPositionChangedListener;
+        tiemHandler.sendEmptyMessageDelayed(0, 5000);
     }
 }

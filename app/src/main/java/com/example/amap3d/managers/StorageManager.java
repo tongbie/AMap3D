@@ -1,7 +1,6 @@
 package com.example.amap3d.managers;
 
 import android.content.SharedPreferences;
-import android.support.annotation.Nullable;
 
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.gsons.CookieGson;
@@ -39,7 +38,7 @@ public class StorageManager {
     }
 
     /*拿Cookie*/
-    public static List<Cookie> get(String key, @Nullable Object obj) {
+    public static List<Cookie> getCookieList(String key) {
         sharedPreferences = MainActivity.getActivity().getSharedPreferences(key, MODE_PRIVATE);
         String cookieString = sharedPreferences.getString(key, null);
         List<Cookie> cookieList = new ArrayList<>();

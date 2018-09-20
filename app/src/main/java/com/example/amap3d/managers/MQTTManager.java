@@ -12,7 +12,6 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.net.SocketTimeoutException;
@@ -68,7 +67,7 @@ public class MQTTManager {
             Response response = Utils.client.newCall(request).execute();
             String responseData = response.body().string();
             String responseCode = String.valueOf(response.code());
-            if (responseData != null && responseCode.charAt(0) == '2') {
+            if (responseCode.charAt(0) == '2') {
                     MQTTAccountGson account = Utils.gson.fromJson(responseData, MQTTAccountGson.class);
                     String username = account.getUsername();
                     String password = account.getPassword();
@@ -78,8 +77,8 @@ public class MQTTManager {
                     mqttClient = new MqttClient(linkMqttURL, deviceId, new MemoryPersistence());
                     mqttClient.setCallback(mqttCallback);
                     mqttClient.connect(mqttOptions);
-                    subscribeTopic(mqttTopic, 0);
-                    subscribeTopic(PeopleManager.getInstance().uploadPositionTitle, 0);
+                    subscribeTopic(mqttTopic);
+                    subscribeTopic(PeopleManager.uploadPositionTitle);
             }
         } catch (SocketTimeoutException e) {
             Utils.uiToast("连接超时，请检查网络设置");
@@ -90,10 +89,10 @@ public class MQTTManager {
     }
 
     /* 订阅消息 */
-    public void subscribeTopic(String topic, int qos) {
+    private void subscribeTopic(String topic) {
         if (mqttClient != null) {
             try {
-                mqttClient.subscribe(topic, qos);
+                mqttClient.subscribe(topic, 0);
             } catch (MqttException e) {
                 e.printStackTrace();
                 Log.e("subscribeTopic", e.getMessage());
@@ -111,10 +110,6 @@ public class MQTTManager {
                 message.setPayload(msg.getBytes());
                 mqttClient.publish(topic, message);
             }
-        } catch (MqttPersistenceException e) {
-            e.printStackTrace();
-        } catch (MqttException e) {
-            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -130,7 +125,7 @@ public class MQTTManager {
         public void messageArrived(String topic, MqttMessage message) {
             if (isShowMoving && topic.equals(mqttTopic)) {
                 BusManager.getInstance().moveBus(message);
-            } else if (topic.equals(PeopleManager.getInstance().uploadPositionTitle)) {
+            } else if (topic.equals(PeopleManager.uploadPositionTitle)) {
                 PeopleManager.getInstance().mqttUpload(message);
             }
         }
@@ -141,12 +136,8 @@ public class MQTTManager {
         }
     };
 
-
-
-
-
     /* 断开连接 */
-    public void disconnect() {
+    private void disconnect() {
         if (mqttClient != null && mqttClient.isConnected()) {
             try {
                 mqttClient.disconnect();

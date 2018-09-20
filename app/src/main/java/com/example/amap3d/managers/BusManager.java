@@ -25,8 +25,8 @@ import okhttp3.Response;
 
 public class BusManager {
     private static BusManager busManager;
-    public static final String busDataURL = "http://bus.mysdnu.cn/android/bus";
-    public static final String busPositionURL = "http://bus.mysdnu.cn/android/bus/location";
+    private static final String busDataURL = "http://bus.mysdnu.cn/android/bus";
+    private static final String busPositionURL = "http://bus.mysdnu.cn/android/bus/location";
 
     private BusManager() {
     }
@@ -46,7 +46,7 @@ public class BusManager {
         Response response = Utils.client.newCall(request).execute();
         String responseData = response.body().string();
         String responseCode = String.valueOf(response.code());
-        if (responseData != null && responseCode.charAt(0) == '2') {
+        if (responseCode.charAt(0) == '2') {
             List<BusDataGson> busDatas = Utils.gson.fromJson(responseData, new TypeToken<List<BusDataGson>>() {
             }.getType());
             for (BusDataGson busData : busDatas) {
@@ -71,7 +71,6 @@ public class BusManager {
                 Datas.busMarkerMap.get(key).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
                 AMapManager.getInstance().moveMarker(new LatLng[]{new LatLng(lat, lng), Datas.busMarkerMap.get(key).getPosition()}, key);
             }
-//                    Log.e("messageArrived", Datas.busMarkerMap.toString());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -86,7 +85,7 @@ public class BusManager {
         Response response = Utils.client.newCall(request).execute();
         String responseData = response.body().string();
         String responseCode = String.valueOf(response.code());
-        if (responseData != null && responseCode.charAt(0) == '2') {
+        if (responseCode.charAt(0) == '2') {
             busPositionList = Utils.gson.fromJson(responseData, new TypeToken<List<BusPositionGson>>() {
             }.getType());
         }
