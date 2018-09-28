@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
@@ -14,6 +15,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import com.example.amap3d.datas.Datas;
+import com.example.amap3d.datas.Fields;
 import com.example.amap3d.managers.StorageManager;
 
 public class LoginActivity extends AppCompatActivity {
@@ -27,12 +30,12 @@ public class LoginActivity extends AppCompatActivity {
         initWebView();
     }
 
-    private void judgeClearCache(){
+    private void judgeClearCache() {
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
-        if(bundle!=null){
-            int isLogOut=bundle.getInt("isLogOut");
-            if(isLogOut==1){
+        if (bundle != null) {
+            int isLogOut = bundle.getInt("isLogOut");
+            if (isLogOut == 1) {
                 CookieSyncManager.createInstance(this);
                 CookieManager cookieManager = CookieManager.getInstance();
                 cookieManager.removeAllCookie();
@@ -78,9 +81,8 @@ public class LoginActivity extends AppCompatActivity {
                 try {
                     String[] oauthKeys = splitReturnUrl(returnUrl);
                     if (oauthKeys[0] != null && oauthKeys[1] != null) {
-                        StorageManager.storage("oauth_token", oauthKeys[0]);
-                        StorageManager.storage("oauth_verifier", oauthKeys[1]);
-//                        PeopleManager.getInstance().attemptLogin();
+                        StorageManager.storage(Fields.STORAGE_OAUTH_TOKEN, oauthKeys[0]);
+                        StorageManager.storage(Fields.STORAGE_OAUTH_VERIFIER, oauthKeys[1]);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

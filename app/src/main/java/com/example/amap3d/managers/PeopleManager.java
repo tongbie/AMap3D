@@ -2,6 +2,7 @@ package com.example.amap3d.managers;
 
 import android.content.Intent;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
@@ -10,7 +11,9 @@ import com.amap.api.maps.model.MarkerOptions;
 import com.example.amap3d.LoginActivity;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.R;
+import com.example.amap3d.datas.Fields;
 import com.example.amap3d.gsons.PeopleRemarkGson;
+import com.example.amap3d.gsons.UserInfo;
 import com.example.amap3d.utils.Utils;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.gsons.UploadPositionGson;
@@ -74,8 +77,6 @@ public class PeopleManager {
 
     private UploadPositionGson uploadPositionGson;
 
-    public static final String uploadPositionTitle = "clientLocation";
-
     /*上传位置*/
     public void uploadPosition() {
         if (uploadPositionGson == null) {
@@ -87,7 +88,7 @@ public class PeopleManager {
                     uploadPositionGson.setLat(latitude + "");
                     uploadPositionGson.setLng(longitude + "");
                     String uploadPositionJson = Utils.gson.toJson(uploadPositionGson);
-                    MQTTManager.getInstance().publish(uploadPositionTitle, uploadPositionJson, true);
+                    MQTTManager.getInstance().publish(Fields.MQTT_TITLE_UPLOAD_POSITION, uploadPositionJson, true);
                 }
             });
         }
@@ -100,7 +101,7 @@ public class PeopleManager {
         AMapManager.getInstance().setOnPositionChangedListener(null);
         try {
             if (MQTTManager.getInstance().mqttClient != null) {
-                MQTTManager.getInstance().mqttClient.unsubscribe(uploadPositionTitle);
+                MQTTManager.getInstance().mqttClient.unsubscribe(Fields.MQTT_TITLE_UPLOAD_POSITION);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -115,12 +116,12 @@ public class PeopleManager {
                     .cookieJar(new CookieJar() {
                         @Override
                         public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
-                            StorageManager.storage(Datas.storageCookie, cookies);
+                            StorageManager.storage(Fields.STORAGE_COOKIE, cookies);
                         }
 
                         @Override
                         public List<Cookie> loadForRequest(HttpUrl url) {
-                            return StorageManager.getCookieList(Datas.storageCookie);
+                            return StorageManager.getCookieList(Fields.STORAGE_COOKIE);
                         }
                     })
                     .connectTimeout(10, TimeUnit.SECONDS)
@@ -141,7 +142,7 @@ public class PeopleManager {
 
                         @Override
                         public List<Cookie> loadForRequest(HttpUrl url) {
-                            return StorageManager.getCookieList(Datas.storageCookie);
+                            return StorageManager.getCookieList(Fields.STORAGE_COOKIE);
                         }
                     })
                     .connectTimeout(10, TimeUnit.SECONDS)
@@ -151,10 +152,14 @@ public class PeopleManager {
         return getRemarkClient;
     }
 
-    private void attemptLogin() {
-        if (!Datas.isLogin) {
-            String oauth_token = StorageManager.get("oauth_token");
-            String oauth_verifier = StorageManager.get("oauth_verifier");
+    public void attemptLogin() {
+        attemptLogin(false);
+    }
+
+    public void attemptLogin(boolean isNeedToLoginActivity) {
+        if (!Utils.isLogin()) {
+            String oauth_token = StorageManager.get(Fields.STORAGE_OAUTH_TOKEN);
+            String oauth_verifier = StorageManager.get(Fields.STORAGE_OAUTH_VERIFIER);
             if (oauth_token != null && oauth_verifier != null) {
                 FormBody formBody = new FormBody.Builder()
                         .add("oauth_token", oauth_token)
@@ -168,13 +173,21 @@ public class PeopleManager {
                     Response response = getLoginClient().newCall(request).execute();
                     String code = String.valueOf(response.code());
                     String body = response.body().string();
-                    Log.e("attemptLogin", body);
                     if (code.charAt(0) == '2') {
-                        Datas.isLogin = true;
+                        UserInfo userInfo = Utils.gson.fromJson(body, UserInfo.class);
+                        Datas.userInfo.setUserName(userInfo.getUserName());
+                        Datas.userInfo.setDisplayName(userInfo.getDisplayName());
+                        Datas.userInfo.setRemark(userInfo.getRemark());
+                        Datas.userInfo.setTime(userInfo.getTime());
+                        ViewManager.getInstance().setUserView(true);
+                    } else {
+                        if ((isNeedToLoginActivity)) {
+                            MainActivity.getActivity().startActivity(new Intent(MainActivity.getActivity(), LoginActivity.class));
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    deleteKey();
+                    Utils.uiToast("登录失败");
                 }
             }
         }
@@ -198,7 +211,7 @@ public class PeopleManager {
         @Override
         public void run() {
             try {
-                attemptLogin();
+//                attemptLogin();
                 FormBody.Builder builder = new FormBody.Builder();
                 builder.add("remark", text);
                 RequestBody requestBody = builder.build();
@@ -207,13 +220,13 @@ public class PeopleManager {
                         .post(requestBody)
                         .build();
                 Response response = getLoginClient().newCall(request).execute();
-                String responseCode = String.valueOf(response.code());
-                String responseData = response.body().string();
-                if (responseCode.charAt(0) == '2' && responseData.contains("success")) {
+                String code = String.valueOf(response.code());
+                String body = response.body().string();
+                if (code.charAt(0) == '2' && body.contains("success")) {
                     uploadPosition();
-                } else if (responseData.contains("place login")) {
+                } else if (body.contains("place login")) {
                     MainActivity.getActivity().startActivity(new Intent(MainActivity.getActivity(), LoginActivity.class));
-                    Datas.isLogin = false;
+                    Utils.clearUserInfo();
                 } else {
                     deleteKey();
                     Utils.uiToast("失败了...");
@@ -225,7 +238,7 @@ public class PeopleManager {
         }
     }
 
-    public void mqttUpload(MqttMessage message) {
+    public void receiveMqttMessage(MqttMessage message) {
         try {
             String data = message.toString();
             UploadPositionGson peopleGson = Utils.gson.fromJson(data, UploadPositionGson.class);
@@ -255,9 +268,9 @@ public class PeopleManager {
     }
 
     public void deleteKey() {
-        StorageManager.delete("oauth_token");
-        StorageManager.delete("oauth_verifier");
-        StorageManager.delete(Datas.storageCookie);
+        StorageManager.delete(Fields.STORAGE_OAUTH_TOKEN);
+        StorageManager.delete(Fields.STORAGE_OAUTH_VERIFIER);
+        StorageManager.delete(Fields.STORAGE_COOKIE);
     }
 
     public void requireRemark(String deviceId, final Marker marker) {

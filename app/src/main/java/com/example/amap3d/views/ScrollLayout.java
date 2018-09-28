@@ -131,6 +131,18 @@ public class ScrollLayout extends LinearLayout {
         isChildViewAtTop = true;
     }
 
+    public void close() {
+        scroller.startScroll(0, getScrollY(), 0, -getScrollY());
+        setScrollListenerUp(false);
+        postInvalidate();
+        distanceY = 0;
+        isChildViewAtTop = false;
+    }
+
+    public boolean isOpen() {
+        return distanceY > 0;
+    }
+
     @Override
     public void computeScroll() {
         super.computeScroll();

@@ -3,6 +3,8 @@ package com.example.amap3d.managers;
 import android.os.Build;
 import android.util.Log;
 
+import com.example.amap3d.datas.Datas;
+import com.example.amap3d.datas.Fields;
 import com.example.amap3d.gsons.MQTTAccountGson;
 import com.example.amap3d.utils.Utils;
 
@@ -68,17 +70,19 @@ public class MQTTManager {
             String responseData = response.body().string();
             String responseCode = String.valueOf(response.code());
             if (responseCode.charAt(0) == '2') {
-                    MQTTAccountGson account = Utils.gson.fromJson(responseData, MQTTAccountGson.class);
-                    String username = account.getUsername();
-                    String password = account.getPassword();
-                    //断线不支持重连，必须申请新的username
-                    mqttOptions.setUserName(username);
-                    mqttOptions.setPassword(password.toCharArray());
-                    mqttClient = new MqttClient(linkMqttURL, deviceId, new MemoryPersistence());
-                    mqttClient.setCallback(mqttCallback);
-                    mqttClient.connect(mqttOptions);
-                    subscribeTopic(mqttTopic);
-                    subscribeTopic(PeopleManager.uploadPositionTitle);
+                MQTTAccountGson account = Utils.gson.fromJson(responseData, MQTTAccountGson.class);
+                String username = account.getUsername();
+                String password = account.getPassword();
+                //断线不支持重连，必须申请新的username
+                mqttOptions.setUserName(username);
+                mqttOptions.setPassword(password.toCharArray());
+                mqttClient = new MqttClient(linkMqttURL, deviceId, new MemoryPersistence());
+                mqttClient.setCallback(mqttCallback);
+                mqttClient.connect(mqttOptions);
+                subscribeTopic(mqttTopic);
+                subscribeTopic(Fields.MQTT_TITLE_UPLOAD_POSITION);
+                //TODO:
+                subscribeTopic("BusMoveLis");
             }
         } catch (SocketTimeoutException e) {
             Utils.uiToast("连接超时，请检查网络设置");
@@ -125,8 +129,10 @@ public class MQTTManager {
         public void messageArrived(String topic, MqttMessage message) {
             if (isShowMoving && topic.equals(mqttTopic)) {
                 BusManager.getInstance().moveBus(message);
-            } else if (topic.equals(PeopleManager.uploadPositionTitle)) {
-                PeopleManager.getInstance().mqttUpload(message);
+            } else if (topic.equals(Fields.MQTT_TITLE_UPLOAD_POSITION)) {
+                PeopleManager.getInstance().receiveMqttMessage(message);
+            }else if(topic.equals("BusMoveLis")){
+                BusManager.getInstance().moveTestBus(message);
             }
         }
 
