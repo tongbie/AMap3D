@@ -1,10 +1,7 @@
 package com.example.amap3d.datas;
 
-import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
-import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
 import com.example.amap3d.gsons.BusPositionGson;
-import com.example.amap3d.gsons.UserInfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,10 +18,12 @@ public class Datas {
     public static HashMap<String, Marker> peopleMap = new HashMap<>();//人员位置
     public static HashMap<String, String> peopleRemarkList = new HashMap<>();//人员信息
 
-    public static SmoothMoveMarker smoothMarker;
-    public static List<LatLng> latLngList = new ArrayList<>();
+    public static String currentInfoWindowRemark = "";
 
-    public static String currentInfoWindowRemark = "";//用户上传位置备注
+    public static final String storageRemark = "storageRemark";
+    public static final String storageCookie = "storageCookie";
+
+    public static boolean isLogin = false;
 
     public static void clear() {
         busInformationMap.clear();
@@ -41,8 +40,5 @@ public class Datas {
         busPositionList = null;
         peopleMap = null;
         peopleRemarkList = null;
-        userInfo = null;
     }
-
-    public static UserInfo userInfo = new UserInfo();
 }

@@ -9,7 +9,6 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.example.amap3d.MainActivity;
-import com.example.amap3d.datas.Datas;
 import com.google.gson.Gson;
 
 import java.util.concurrent.TimeUnit;
@@ -63,20 +62,5 @@ public class Utils {
 
     public static int getScreenWidth(Context context) {
         return context.getResources().getDisplayMetrics().widthPixels;
-    }
-
-    public static boolean isLogin() {
-        boolean isLogin = false;
-        if (Datas.userInfo.getUserName() != null && !Datas.userInfo.getUserName().equals("")) {
-            isLogin = true;
-        }
-        return isLogin;
-    }
-
-    public static void clearUserInfo() {
-        Datas.userInfo.setUserName(null);
-        Datas.userInfo.setDisplayName(null);
-        Datas.userInfo.setRemark(null);
-        Datas.userInfo.setTime(0);
     }
 }

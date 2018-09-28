@@ -1,20 +1,17 @@
 package com.example.amap3d.managers;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Intent;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.PopupWindow;
 import android.widget.TextView;
@@ -22,11 +19,11 @@ import android.widget.Toast;
 
 import com.example.amap3d.LoginActivity;
 import com.example.amap3d.R;
-import com.example.amap3d.datas.Fields;
 import com.example.amap3d.utils.Utils;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.views.ScrollLayout;
+import com.example.amap3d.views.MenuButton;
 import com.example.amap3d.views.RefreshButton;
 import com.example.amap3d.views.TimetableAdapter;
 
@@ -38,23 +35,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollLayoutStateChangeListener {
     @SuppressLint("StaticFieldLeak")
     private static ViewManager viewManager;
-
     private PopupMenu popupMenu;
     public RefreshButton refreshButton;
     private ScrollLayout scrollLayout;
-    private TextView timetableHintText;
+    public TextView textView;
     private PopupWindow popupWindow;
-    private ImageView timetableImage;
-    private ImageView userImage;
-    private TextView userNameText;
-    private TextView userRemarkText;
 
     public boolean isRefreshing = false;
 
@@ -72,52 +61,29 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Activity mainActivity = MainActivity.getActivity();
-                refreshButton = mainActivity.findViewById(R.id.refreshButton);
+                refreshButton = MainActivity.getActivity().findViewById(R.id.refreshButton);
                 refreshButton.setOnClickListener(ViewManager.this);
-                timetableImage = mainActivity.findViewById(R.id.timetableImage);
-                timetableHintText = mainActivity.findViewById(R.id.timetableHintText);
-                scrollLayout = mainActivity.findViewById(R.id.othersScrollLayout);
+                MainActivity.getActivity().findViewById(R.id.menuButton).setOnClickListener(ViewManager.this);
+                textView = MainActivity.getActivity().findViewById(R.id.textView);
+                scrollLayout = MainActivity.getActivity().findViewById(R.id.othersScrollLayout);
                 scrollLayout.setOnScrollLayoutStateChangeListener(ViewManager.this);
-                userImage = mainActivity.findViewById(R.id.userImage);
-                userNameText = mainActivity.findViewById(R.id.userNameText);
-                userRemarkText = mainActivity.findViewById(R.id.userRemarkText);
                 initPopupMenu();
                 initUploadPositionRemarkWindow();
                 requireBusTimetable();
-                timetableHintText.setOnClickListener(ViewManager.this);
-                userImage.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        login();
-                    }
-                });
-                mainActivity.findViewById(R.id.uploadPositionLayout).setOnClickListener(ViewManager.this);
-                mainActivity.findViewById(R.id.settingLayout).setOnClickListener(ViewManager.this);
             }
         }).start();
     }
 
-    private ExecutorService loginService;
-
-    private void login() {
-        if (loginService == null) {
-            loginService = Executors.newFixedThreadPool(1);
-        }
-        if (((ThreadPoolExecutor) loginService).getActiveCount() > 0) {
-            return;
-        }
-        loginService.submit(new Runnable() {
+    private void initPopupMenu() {
+        final MenuButton menuButton = MainActivity.getActivity().findViewById(R.id.menuButton);
+        popupMenu = new PopupMenu(MainActivity.getActivity().getApplicationContext(), menuButton);
+        popupMenu.getMenuInflater().inflate(R.menu.main, popupMenu.getMenu());
+        popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
             @Override
-            public void run() {
-                PeopleManager.getInstance().attemptLogin(true);
+            public void onDismiss(PopupMenu menu) {
+                menuButton.setIsShow(0);
             }
         });
-    }
-
-    private void initPopupMenu() {
-        popupMenu = new PopupMenu(MainActivity.getActivity().getApplicationContext(), null);
-        popupMenu.getMenuInflater().inflate(R.menu.main_menu, popupMenu.getMenu());
         popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
@@ -136,39 +102,15 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                         break;
                     case R.id.logOut:
                         PeopleManager.getInstance().deleteKey();
-                        Utils.clearUserInfo();
                         Intent intent = new Intent(MainActivity.getActivity(), LoginActivity.class);
                         intent.putExtra("isLogOut", 1);
                         MainActivity.getActivity().startActivity(intent);
                         break;
-//                    case R.id.userImage:
-//                        Toast.makeText(MainActivity.getActivity(), "登录中", Toast.LENGTH_SHORT).show();
-//                        PeopleManager.getInstance().attemptLogin(true);
-//                        break;
                     default:
                 }
                 return false;
             }
         });
-    }
-
-    public void setUserView(final boolean isLogin) {
-        MainActivity.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (isLogin) {
-                    userImage.setImageResource(R.drawable.icon_login);
-                    userNameText.setText(Datas.userInfo.getDisplayName());
-                    userRemarkText.setText("备注 " + Datas.userInfo.getRemark());
-                    Log.e("setUserView", Datas.userInfo.getUserName());
-                } else {
-                    userImage.setImageResource(R.drawable.icon_logout);
-                    userNameText.setText("未登录");
-                    userRemarkText.setText("备注 ");
-                }
-            }
-        });
-
     }
 
     @SuppressLint("SetTextI18n")
@@ -184,7 +126,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         final TextView wordCountTextView = view.findViewById(R.id.wordCountTextView);
         wordCountTextView.setText("(0/50)");
         final EditText editText = view.findViewById(R.id.uploadEditText);
-        String positionRemark = StorageManager.get(Fields.STORAGE_REMARK);
+        String positionRemark = StorageManager.get(Datas.storageRemark);
         if (positionRemark != null) {
             editText.setText(positionRemark);
             wordCountTextView.setText("(" + positionRemark.length() + "/50)");
@@ -218,7 +160,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
             public void onClick(View v) {
                 popupWindow.dismiss();
                 String text = editText.getText().toString();
-                StorageManager.storage(Fields.STORAGE_REMARK, text);
+                StorageManager.storage(Datas.storageRemark, text);
                 if (text.length() > 50) {
                     Toast.makeText(MainActivity.getActivity(), "字数超过限制", Toast.LENGTH_SHORT).show();
                 } else {
@@ -244,27 +186,15 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                     refresh();
                 }
                 break;
-            case R.id.uploadPositionLayout:
-                if (popupWindow == null) {
-                    initUploadPositionRemarkWindow();
+            case R.id.menuButton:
+                MenuButton menuButton = ((MenuButton) view);
+                if (menuButton.getIsShow() != 1) {
+                    menuButton.setIsShow(1);
+                } else if (menuButton.getIsShow() == 1) {
+                    menuButton.setIsShow(0);
                 }
-                popupWindow.showAtLocation(MainActivity.getActivity().getWindow().getDecorView(), Gravity.CENTER, 0, 0);
+                popupMenu.show();
                 break;
-            case R.id.settingLayout:
-
-                break;
-            case R.id.timetableHintText:
-                if (scrollLayout.isOpen()) {
-                    scrollLayout.close();
-                    timetableImage.setImageResource(R.drawable.icon_timetable);
-                } else {
-                    scrollLayout.open();
-                    timetableImage.setImageResource(R.drawable.icon_map);
-                }
-                break;
-            case R.id.userImage:
-                break;
-            default:
         }
     }
 
@@ -282,16 +212,16 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
 
     @Override
     public void startingScrollUp() {
-        timetableHintText.setText("显示地图");
+        textView.setText("点击或下拉返回");
     }
 
     @Override
     public void scrollDownEnd() {
-        timetableHintText.setText("校车时刻");
+        textView.setText("上滑查看班车时刻");
     }
 
     private void requireBusTimetable() {
-        timetableHintText.setText("数据加载中...");
+        textView.setText("数据加载中...");
         String data = "{\"千佛山校区 → 长清湖校区\":[{\"routeOrder\":1,\"routeTitle\":\"千佛山校区 → 长清湖校区\",\"routeStart\":\"学校北门\",\"timeOrder\":1,\"timeTitle\":\"7月7日～7月13日\",\"timeList\":\"7:10,13:00,18:00\"}],\"长清湖校区 → 千佛山校区\":[{\"routeOrder\":2,\"routeTitle\":\"长清湖校区 → 千佛山校区\",\"routeStart\":\"教学楼、大学生活动中心\",\"timeOrder\":1,\"timeTitle\":\"7月7日～7月13日\",\"timeList\":\"7:00  11:50  16:40,17:30,21:00\"}],\"龙泉山庄 →阳光舜城 → 长清湖校区\":[{\"routeOrder\":3,\"routeTitle\":\"龙泉山庄 →阳光舜城 → 长清湖校区\",\"routeStart\":\"龙泉山庄\",\"timeOrder\":1,\"timeTitle\":\"7月7日～7月13日\",\"timeList\":\"7:10,13:00\"}],\"长清湖校区 → 阳光舜城 → 龙泉山庄\":[{\"routeOrder\":4,\"routeTitle\":\"长清湖校区 → 阳光舜城 → 龙泉山庄\",\"routeStart\":\"教学楼、大学生活动中心\",\"timeOrder\":1,\"timeTitle\":\"7月7日～7月13日\",\"timeList\":\"11:50  17:30\"}]}";
         decodeJson(data);
     }
@@ -323,9 +253,9 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
             linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
             recyclerView.setLayoutManager(linearLayoutManager);
             recyclerView.setAdapter(new TimetableAdapter(timetableList));
-            timetableHintText.setText("校车时刻");
+            textView.setText("上滑查看班车时刻");
         } catch (Exception e) {
-            timetableHintText.setText("校车时刻");
+            textView.setText("上滑查看班车时刻");
             e.printStackTrace();
         }
     }

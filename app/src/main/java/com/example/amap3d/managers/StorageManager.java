@@ -71,7 +71,7 @@ public class StorageManager {
         sharedPreferences = MainActivity.getActivity().getSharedPreferences(key, MODE_PRIVATE);
         editor = sharedPreferences.edit();
         editor.putString(key, content);
-        editor.commit();
+        editor.apply();
     }
 
     public static String get(String key) {

@@ -5,13 +5,12 @@
     android:id="@+id/coordinatorLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#ffffff"
     tools:context="com.example.amap3d.MainActivity">
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="115dp">
+        android:layout_marginBottom="35dp">
 
         <com.example.amap3d.views.MapViewContainerView
             android:id="@+id/mapViewContainerView"
@@ -24,6 +23,14 @@
             android:layout_height="40dp"
             android:layout_marginLeft="8dp"
             android:layout_marginTop="8dp" />
+
+        <com.example.amap3d.views.MenuButton
+            android:id="@+id/menuButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="bottom|left"
+            android:layout_marginBottom="8dp"
+            android:layout_marginLeft="8dp" />
     </FrameLayout>
 
     <com.example.amap3d.views.ScrollLayout
@@ -31,152 +38,32 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="45dp"
-        app:minHeight="70dp">
+        android:background="@android:color/transparent"
+        app:minHeight="35dp">
 
-        <FrameLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="430dp"
-            android:background="#ffffff"
+            android:layout_height="400dp"
             android:orientation="vertical">
 
-            <RelativeLayout
+            <TextView
+                android:id="@+id/textView"
+                android:textSize="16dp"
+                android:textColor="#ffffff"
+                android:text="上滑查看班车时刻"
+                android:background="#a3a3a2"
+                android:gravity="center"
                 android:layout_width="match_parent"
-                android:layout_height="70dp"
-                android:layout_gravity="top">
-
-                <ImageView
-                    android:id="@+id/userImage"
-                    android:src="@drawable/icon_logout"
-                    android:layout_width="46dp"
-                    android:layout_height="46dp"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginBottom="12dp"
-                    android:layout_marginLeft="16dp"
-                    android:layout_marginRight="16dp"
-                    android:layout_alignParentLeft="true"/>
-
-                <TextView
-                    android:id="@+id/userNameText"
-                    android:text="未登录"
-                    android:layout_width="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:layout_height="23dp"
-                    android:textSize="16dp"
-                    android:gravity="left|center"
-                    android:textColor="#000000"
-                    android:layout_alignParentTop="true"
-                    android:layout_toRightOf="@id/userImage"/>
-
-                <TextView
-                    android:id="@+id/userRemarkText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="23dp"
-                    android:layout_marginBottom="12dp"
-                    android:textSize="14dp"
-                    android:gravity="left|center"
-                    android:text="备注 "
-                    android:layout_alignParentBottom="true"
-                    android:layout_toRightOf="@id/userImage"/>
-            </RelativeLayout>
+                android:layout_height="35dp" />
 
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/recycleView"
-                android:layout_width="match_parent"
-                android:layout_height="360dp"
-                android:layout_gravity="bottom"
+                android:background="#ffffff"
                 android:paddingLeft="10dp"
-                android:paddingRight="10dp"></android.support.v7.widget.RecyclerView>
-        </FrameLayout>
+                android:paddingRight="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"></android.support.v7.widget.RecyclerView>
+        </LinearLayout>
 
     </com.example.amap3d.views.ScrollLayout>
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="45dp"
-        android:layout_gravity="bottom">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:layout_alignParentTop="true"
-            android:background="#e0e0e0" />
-
-        <ImageView
-            android:id="@+id/timetableImage"
-            android:layout_width="17dp"
-            android:layout_height="17dp"
-            android:layout_alignParentLeft="true"
-            android:layout_marginBottom="14dp"
-            android:layout_marginLeft="14dp"
-            android:layout_marginRight="6dp"
-            android:layout_marginTop="14dp"
-            android:src="@drawable/icon_timetable" />
-
-        <TextView
-            android:id="@+id/timetableHintText"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_toRightOf="@id/timetableImage"
-            android:gravity="center"
-            android:text="校车时刻"
-            android:textSize="14dp" />
-
-        <LinearLayout
-            android:id="@+id/uploadPositionLayout"
-            android:layout_width="wrap_content"
-            android:layout_height="31dp"
-            android:layout_alignParentRight="true"
-            android:layout_margin="7dp"
-            android:background="@drawable/bg_shape_button"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="15dp"
-                android:layout_height="15dp"
-                android:layout_marginBottom="8dp"
-                android:layout_marginLeft="12dp"
-                android:layout_marginRight="3dp"
-                android:layout_marginTop="8dp"
-                android:src="@drawable/icon_upload_position" />
-
-            <TextView
-                android:id="@+id/uploadPositionText"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_marginRight="14dp"
-                android:gravity="center"
-                android:text="上传位置"
-                android:textColor="#ffffff"
-                android:textSize="15dp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/settingLayout"
-            android:layout_width="wrap_content"
-            android:layout_height="31dp"
-            android:layout_margin="7dp"
-            android:layout_toLeftOf="@id/uploadPositionLayout"
-            android:background="@drawable/bg_border_button"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="15dp"
-                android:layout_height="15dp"
-                android:layout_marginBottom="8dp"
-                android:layout_marginLeft="12dp"
-                android:layout_marginRight="3dp"
-                android:layout_marginTop="8dp"
-                android:src="@drawable/icon_setting" />
-
-            <TextView
-                android:id="@+id/settingText"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_marginRight="14dp"
-                android:gravity="center"
-                android:text="设置"
-                android:textSize="15dp" />
-        </LinearLayout>
-    </RelativeLayout>
 </FrameLayout>
