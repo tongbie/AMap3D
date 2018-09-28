@@ -97,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
                 AMapManager.getInstance().addBusMarker();
                 MQTTManager.getInstance().linkMQTT(MQTTManager.getInstance().mqttCallback);
                 PeopleManager.getInstance().requireAllPosition();
+                PeopleManager.getInstance().attemptLogin();
                 ViewManager.getInstance().refreshButton.setRefreshing(false);
                 ViewManager.getInstance().isRefreshing = false;
             }catch (Exception e){

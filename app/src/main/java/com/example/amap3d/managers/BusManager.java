@@ -1,7 +1,10 @@
 package com.example.amap3d.managers;
 
+import android.util.Log;
+
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
+import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
 import com.example.amap3d.R;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.gsons.BusDataGson;
@@ -13,6 +16,7 @@ import com.google.gson.reflect.TypeToken;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -76,8 +80,56 @@ public class BusManager {
         }
     }
 
+    boolean isNeedSetPoints = true;
+
+    public void moveTestBus(MqttMessage message) {
+        try {
+            List<BusMoveGson> busMoveGsons = Utils.gson.fromJson(message.toString(), new TypeToken<List<BusMoveGson>>() {
+            }.getType());
+            for (BusMoveGson busMoveGson : busMoveGsons) {
+                final String key = busMoveGson.getGPSDeviceIMEI();
+                LatLng latLng = Datas.busMarkerMap.get(key).getPosition();
+                double lat = latLng.latitude;
+                double lng = latLng.longitude;
+                Datas.busMarkerMap.get(key).setPosition(new LatLng(busMoveGson.getLat(), busMoveGson.getLng()));
+                Datas.busMarkerMap.get(key).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
+
+                Datas.latLngList.add(new LatLng(lat, lng));
+                if(Datas.latLngList.size()>1) {
+                    Datas.latLngList.remove(0);
+                }
+
+                if (Datas.smoothMarker == null) {
+                    Datas.smoothMarker = new SmoothMoveMarker(AMapManager.aMap);
+                    Datas.smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.bus_move));
+                    Datas.smoothMarker.setTotalDuration(1);
+                    Datas.smoothMarker.setMoveListener(new SmoothMoveMarker.MoveListener() {
+                        @Override
+                        public void move(double distance) {
+                            Log.e("INDEX", Datas.smoothMarker.getIndex() + "");
+                            if (Datas.smoothMarker.getIndex() > 0) {
+//                                Datas.latLngList.remove(0);
+//                                Datas.smoothMarker.stopMove();
+                            }
+                            if (distance == 0) {
+//                                Datas.smoothMarker.setVisible(false);
+//                                Datas.busMarkerMap.get(key).setVisible(true);
+//                                isNeedSetPoints = true;
+                            }
+                        }
+                    });
+                }
+                Datas.smoothMarker.setPoints(Datas.latLngList);
+                Datas.smoothMarker.startSmoothMove();
+                Datas.busMarkerMap.get(key).setVisible(false);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     /* 获取校车位置 */
-    public synchronized List<BusPositionGson> requireBusPosition() throws Exception{
+    public synchronized List<BusPositionGson> requireBusPosition() throws Exception {
         List<BusPositionGson> busPositionList = null;
         Request request = new Request.Builder()
                 .url(busPositionURL)
