@@ -2,7 +2,6 @@ package com.example.amap3d.managers;
 
 import android.content.Intent;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
@@ -39,7 +38,7 @@ import okhttp3.Response;
 public class PeopleManager {
     private static PeopleManager peopleManager;
     private OkHttpClient loginCheckClient;
-    private OkHttpClient getRemarkClient;
+    private OkHttpClient requireRemarkClient;
 
     public static PeopleManager getInstance() {
         if (peopleManager == null) {
@@ -132,8 +131,8 @@ public class PeopleManager {
     }
 
     private OkHttpClient getRemarkClient() {
-        if (getRemarkClient == null) {
-            getRemarkClient = new OkHttpClient.Builder()
+        if (requireRemarkClient == null) {
+            requireRemarkClient = new OkHttpClient.Builder()
                     .cookieJar(new CookieJar() {
                         @Override
                         public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
@@ -149,11 +148,24 @@ public class PeopleManager {
                     .readTimeout(10, TimeUnit.SECONDS)
                     .build();
         }
-        return getRemarkClient;
+        return requireRemarkClient;
     }
 
     public void attemptLogin() {
         attemptLogin(false);
+    }
+
+    public void requireUserInfo() {
+        try {
+            Request request = new Request.Builder()
+                    .url("http://bus.mysdnu.cn/users/info")
+                    .build();
+            Response response = getRemarkClient().newCall(request).execute();
+            String code = String.valueOf(response.code());
+            String body = response.body().string();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void attemptLogin(boolean isNeedToLoginActivity) {
@@ -162,8 +174,8 @@ public class PeopleManager {
             String oauth_verifier = StorageManager.get(Fields.STORAGE_OAUTH_VERIFIER);
             if (oauth_token != null && oauth_verifier != null) {
                 FormBody formBody = new FormBody.Builder()
-                        .add("oauth_token", oauth_token)
-                        .add("oauth_verifier", oauth_verifier)
+//                        .add("oauth_token", oauth_token)
+//                        .add("oauth_verifier", oauth_verifier)
                         .build();
                 Request request = new Request.Builder()
                         .url("http://bus.mysdnu.cn/login")
@@ -222,17 +234,18 @@ public class PeopleManager {
                 Response response = getLoginClient().newCall(request).execute();
                 String code = String.valueOf(response.code());
                 String body = response.body().string();
+                Log.e("UploadRemarkRunnable", code + " " + body + " " + text);
                 if (code.charAt(0) == '2' && body.contains("success")) {
                     uploadPosition();
                 } else if (body.contains("place login")) {
                     MainActivity.getActivity().startActivity(new Intent(MainActivity.getActivity(), LoginActivity.class));
                     Utils.clearUserInfo();
                 } else {
-                    deleteKey();
                     Utils.uiToast("失败了...");
                 }
             } catch (Exception e) {
                 Utils.uiToast("出现了一些问题");
+                deleteKey();
                 e.printStackTrace();
             }
         }
@@ -282,6 +295,7 @@ public class PeopleManager {
             Response response = getRemarkClient().newCall(request).execute();
             String code = String.valueOf(response.code());
             String data = response.body().string();
+            Log.e("requireRemark", code + " " + data);
             if (code.charAt(0) == '2') {
                 PeopleRemarkGson peopleRemarkGson = Utils.gson.fromJson(data, PeopleRemarkGson.class);
                 remark = peopleRemarkGson.getRemark();
@@ -305,7 +319,7 @@ public class PeopleManager {
                     }
                 });
             } else if (data.contains("place login")) {
-                Utils.uiToast("上传位置后可查看人员信息");
+                Utils.uiToast("登录后可查看人员信息");
             } else {
                 throw new RuntimeException("PeopleManager.requireRemark");
             }

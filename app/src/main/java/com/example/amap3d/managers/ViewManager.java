@@ -2,7 +2,6 @@ package com.example.amap3d.managers;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Intent;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
@@ -11,7 +10,6 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -20,7 +18,6 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.amap3d.LoginActivity;
 import com.example.amap3d.R;
 import com.example.amap3d.datas.Fields;
 import com.example.amap3d.utils.Utils;
@@ -239,7 +236,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         AMapManager.getInstance().removeAllMarker();
         Datas.clear();
         isRefreshing = true;
-        ((MainActivity) MainActivity.getActivity()).getAllData();
+        ((MainActivity) MainActivity.getActivity()).requireAllData();
     }
 
     @Override

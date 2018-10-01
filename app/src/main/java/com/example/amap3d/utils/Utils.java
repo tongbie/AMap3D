@@ -76,7 +76,6 @@ public class Utils {
     public static void clearUserInfo() {
         Datas.userInfo.setUserName(null);
         Datas.userInfo.setDisplayName(null);
-        Datas.userInfo.setRemark(null);
         Datas.userInfo.setTime(0);
     }
 }

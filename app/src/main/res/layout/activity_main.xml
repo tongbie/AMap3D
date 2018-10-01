@@ -16,7 +16,7 @@
         <com.example.amap3d.views.MapViewContainerView
             android:id="@+id/mapViewContainerView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"></com.example.amap3d.views.MapViewContainerView>
+            android:layout_height="match_parent" />
 
         <com.example.amap3d.views.RefreshButton
             android:id="@+id/refreshButton"
@@ -43,6 +43,7 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="70dp"
+                android:background="@drawable/bg_border"
                 android:layout_gravity="top">
 
                 <ImageView

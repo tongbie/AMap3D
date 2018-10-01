@@ -18,6 +18,10 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.amap.api.location.AMapLocation;
+import com.amap.api.location.AMapLocationClient;
+import com.amap.api.location.AMapLocationClientOption;
+import com.amap.api.location.AMapLocationListener;
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.MapView;
@@ -255,6 +259,7 @@ public class AMapManager {
                 }
             }
         });
+
         aMap.setOnMarkerClickListener(markerClickListener);
         UiSettings mUiSettings;
         mUiSettings = aMap.getUiSettings();
@@ -282,4 +287,34 @@ public class AMapManager {
         this.onPositionChangedListener = onPositionChangedListener;
         tiemHandler.sendEmptyMessageDelayed(0, 5000);
     }
+
+//    private void location() {
+//        AMapLocationClient aMapLocationClient;
+//        AMapLocationClientOption aMapLocationClientOption;
+//        aMapLocationClient = new AMapLocationClient(MainActivity.getActivity());
+//        aMapLocationClient.setLocationListener(this);
+//        aMapLocationClientOption = new AMapLocationClientOption();
+//        aMapLocationClientOption.setLocationMode(AMapLocationClientOption.AMapLocationMode.Hight_Accuracy);
+//        aMapLocationClientOption.setNeedAddress(true);
+//        aMapLocationClientOption.setOnceLocation(false);
+//        aMapLocationClientOption.setWifiActiveScan(true);
+//        aMapLocationClientOption.setMockEnable(false);
+//        aMapLocationClientOption.setInterval(1000);
+//        aMapLocationClientOption.setLocationCacheEnable(false);
+//        aMapLocationClientOption.setOnceLocationLatest(true);
+//        aMapLocationClient.setLocationOption(aMapLocationClientOption);
+//        aMapLocationClient.startLocation();
+//
+//    }
+//
+//
+//    @Override
+//    public void onLocationChanged(AMapLocation aMapLocation) {
+//        StringBuilder userPosition = new StringBuilder("");
+//        userPosition.append(aMapLocation.getProvince());
+//        userPosition.append(aMapLocation.getCity());
+//        userPosition.append(aMapLocation.getDistrict());
+//        userPosition.append(aMapLocation.getStreet());
+//        Toast.makeText(MainActivity.getActivity(), userPosition.toString(), Toast.LENGTH_SHORT).show();
+//    }
 }

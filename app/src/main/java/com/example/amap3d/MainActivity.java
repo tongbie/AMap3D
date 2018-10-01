@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         initView(savedInstanceState);
         if (isNetworkAvailable()) {
-            getAllData();
+            requireAllData();
             update(null);
         }
 
@@ -83,11 +83,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public synchronized void getAllData() {
-        refreshExecutorService.submit(getAllDataRunnable);
+    public synchronized void requireAllData() {
+        refreshExecutorService.submit(requireAllDataRunnable);
     }
 
-    private Runnable getAllDataRunnable =new Runnable() {
+    private Runnable requireAllDataRunnable =new Runnable() {
         @Override
         public void run() {
             try {
@@ -97,7 +97,8 @@ public class MainActivity extends AppCompatActivity {
                 AMapManager.getInstance().addBusMarker();
                 MQTTManager.getInstance().linkMQTT(MQTTManager.getInstance().mqttCallback);
                 PeopleManager.getInstance().requireAllPosition();
-                PeopleManager.getInstance().attemptLogin();
+//                PeopleManager.getInstance().attemptLogin();
+                PeopleManager.getInstance().requireUserInfo();
                 ViewManager.getInstance().refreshButton.setRefreshing(false);
                 ViewManager.getInstance().isRefreshing = false;
             }catch (Exception e){
