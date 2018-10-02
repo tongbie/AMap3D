@@ -111,11 +111,11 @@ public class UpdateManager {
     }
 
     private void showUpdataDialog(final boolean isForceUpdate) {
-        if (isServiceWorking(MainActivity.getActivity().getApplicationContext())) {
+        if (isServiceWorking(MainActivity.getInstance().getApplicationContext())) {
             Utils.uiToast("更新下载中...");
             return;
         }
-        final AlertDialog.Builder builer = new AlertDialog.Builder(MainActivity.getActivity());
+        final AlertDialog.Builder builer = new AlertDialog.Builder(MainActivity.getInstance());
         builer.setTitle(isForceUpdate ? "有必须的更新" : "有可用的更新");
         builer.setCancelable(!isForceUpdate);
         builer.setMessage(updateDescription);
@@ -123,7 +123,7 @@ public class UpdateManager {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (isForceUpdate) {
-                    MainActivity.getActivity().finish();
+                    MainActivity.getInstance().finish();
                 }
             }
         });
@@ -133,7 +133,7 @@ public class UpdateManager {
                 downloadApkWithService();
             }
         });
-        MainActivity.getActivity().runOnUiThread(new Runnable() {
+        MainActivity.getInstance().runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 AlertDialog dialog = builer.create();
@@ -162,11 +162,11 @@ public class UpdateManager {
 
     private void downloadApkWithService() {
         Utils.uiToast("开始下载");
-        MainActivity.getActivity().runOnUiThread(new Runnable() {
+        MainActivity.getInstance().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Intent intent = new Intent(MainActivity.getActivity(), DownloadService.class);
-                MainActivity.getActivity().startService(intent);
+                Intent intent = new Intent(MainActivity.getInstance(), DownloadService.class);
+                MainActivity.getInstance().startService(intent);
             }
         });
     }

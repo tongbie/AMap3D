@@ -77,7 +77,7 @@ public class PeopleManager {
     private UploadPositionGson uploadPositionGson;
 
     /*上传位置*/
-    public void uploadPosition() {
+    private void uploadPosition() {
         if (uploadPositionGson == null) {
             uploadPositionGson = new UploadPositionGson();
             uploadPositionGson.setDeviceId(MQTTManager.deviceId);
@@ -120,6 +120,9 @@ public class PeopleManager {
 
                         @Override
                         public List<Cookie> loadForRequest(HttpUrl url) {
+                            for(Cookie cookie:StorageManager.getCookieList(Fields.STORAGE_COOKIE)){
+                                Log.e("Cookie", String.valueOf(cookie));
+                            }
                             return StorageManager.getCookieList(Fields.STORAGE_COOKIE);
                         }
                     })
@@ -130,37 +133,12 @@ public class PeopleManager {
         return loginCheckClient;
     }
 
-    private OkHttpClient getRemarkClient() {
-        if (requireRemarkClient == null) {
-            requireRemarkClient = new OkHttpClient.Builder()
-                    .cookieJar(new CookieJar() {
-                        @Override
-                        public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
-
-                        }
-
-                        @Override
-                        public List<Cookie> loadForRequest(HttpUrl url) {
-                            return StorageManager.getCookieList(Fields.STORAGE_COOKIE);
-                        }
-                    })
-                    .connectTimeout(10, TimeUnit.SECONDS)
-                    .readTimeout(10, TimeUnit.SECONDS)
-                    .build();
-        }
-        return requireRemarkClient;
-    }
-
-    public void attemptLogin() {
-        attemptLogin(false);
-    }
-
     public void requireUserInfo() {
         try {
             Request request = new Request.Builder()
                     .url("http://bus.mysdnu.cn/users/info")
                     .build();
-            Response response = getRemarkClient().newCall(request).execute();
+            Response response = getLoginClient().newCall(request).execute();
             String code = String.valueOf(response.code());
             String body = response.body().string();
         } catch (Exception e) {
@@ -168,39 +146,29 @@ public class PeopleManager {
         }
     }
 
-    public void attemptLogin(boolean isNeedToLoginActivity) {
-        if (!Utils.isLogin()) {
-            String oauth_token = StorageManager.get(Fields.STORAGE_OAUTH_TOKEN);
-            String oauth_verifier = StorageManager.get(Fields.STORAGE_OAUTH_VERIFIER);
-            if (oauth_token != null && oauth_verifier != null) {
-                FormBody formBody = new FormBody.Builder()
-//                        .add("oauth_token", oauth_token)
-//                        .add("oauth_verifier", oauth_verifier)
-                        .build();
-                Request request = new Request.Builder()
-                        .url("http://bus.mysdnu.cn/login")
-                        .post(formBody)
-                        .build();
-                try {
-                    Response response = getLoginClient().newCall(request).execute();
-                    String code = String.valueOf(response.code());
-                    String body = response.body().string();
-                    if (code.charAt(0) == '2') {
-                        UserInfo userInfo = Utils.gson.fromJson(body, UserInfo.class);
-                        Datas.userInfo.setUserName(userInfo.getUserName());
-                        Datas.userInfo.setDisplayName(userInfo.getDisplayName());
-                        Datas.userInfo.setRemark(userInfo.getRemark());
-                        Datas.userInfo.setTime(userInfo.getTime());
-                        ViewManager.getInstance().setUserView(true);
-                    } else {
-                        if ((isNeedToLoginActivity)) {
-                            MainActivity.getActivity().startActivity(new Intent(MainActivity.getActivity(), LoginActivity.class));
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Utils.uiToast("登录失败");
+    public void attemptLogin(String oauth_token, String oauth_verifier) {
+        if (oauth_token != null && oauth_verifier != null) {
+            FormBody formBody = new FormBody.Builder()
+                    .add("oauth_token", oauth_token)
+                    .add("oauth_verifier", oauth_verifier)
+                    .build();
+            Request request = new Request.Builder()
+                    .url("http://bus.mysdnu.cn/login")
+                    .post(formBody)
+                    .build();
+            try {
+                Response response = getLoginClient().newCall(request).execute();
+                String code = String.valueOf(response.code());
+                String body = response.body().string();
+                if (code.charAt(0) == '2') {
+                    UserInfo userInfo = Utils.gson.fromJson(body, UserInfo.class);
+                    Datas.userInfo.setUserInfo(userInfo);
+                    ViewManager.getInstance().setUserViews(true);
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
+                StorageManager.delete(Fields.STORAGE_COOKIE);
+                Utils.uiToast("登录失败");
             }
         }
     }
@@ -223,7 +191,6 @@ public class PeopleManager {
         @Override
         public void run() {
             try {
-//                attemptLogin();
                 FormBody.Builder builder = new FormBody.Builder();
                 builder.add("remark", text);
                 RequestBody requestBody = builder.build();
@@ -234,18 +201,17 @@ public class PeopleManager {
                 Response response = getLoginClient().newCall(request).execute();
                 String code = String.valueOf(response.code());
                 String body = response.body().string();
-                Log.e("UploadRemarkRunnable", code + " " + body + " " + text);
                 if (code.charAt(0) == '2' && body.contains("success")) {
                     uploadPosition();
                 } else if (body.contains("place login")) {
-                    MainActivity.getActivity().startActivity(new Intent(MainActivity.getActivity(), LoginActivity.class));
+                    MainActivity.getInstance().startActivity(new Intent(MainActivity.getInstance(), LoginActivity.class));
                     Utils.clearUserInfo();
                 } else {
                     Utils.uiToast("失败了...");
                 }
             } catch (Exception e) {
                 Utils.uiToast("出现了一些问题");
-                deleteKey();
+                StorageManager.delete(Fields.STORAGE_COOKIE);
                 e.printStackTrace();
             }
         }
@@ -280,19 +246,13 @@ public class PeopleManager {
         }
     }
 
-    public void deleteKey() {
-        StorageManager.delete(Fields.STORAGE_OAUTH_TOKEN);
-        StorageManager.delete(Fields.STORAGE_OAUTH_VERIFIER);
-        StorageManager.delete(Fields.STORAGE_COOKIE);
-    }
-
     public void requireRemark(String deviceId, final Marker marker) {
         String remark;
         Request request = new Request.Builder()
                 .url("http://bus.mysdnu.cn/users/reportInfo/" + deviceId)
                 .build();
         try {
-            Response response = getRemarkClient().newCall(request).execute();
+            Response response = getLoginClient().newCall(request).execute();
             String code = String.valueOf(response.code());
             String data = response.body().string();
             Log.e("requireRemark", code + " " + data);
@@ -301,7 +261,7 @@ public class PeopleManager {
                 remark = peopleRemarkGson.getRemark();
                 Datas.currentInfoWindowRemark = remark;
                 final String finalRemark = remark;
-                MainActivity.getActivity().runOnUiThread(new Runnable() {
+                MainActivity.getInstance().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         marker.setSnippet(finalRemark);

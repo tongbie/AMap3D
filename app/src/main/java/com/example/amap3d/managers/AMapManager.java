@@ -61,10 +61,11 @@ public class AMapManager {
     }
 
     public void initMapView(Bundle savedInstanceState) {
-        AMapManager.mapView = new MapView(MainActivity.getActivity());
-        MapViewContainerView mapViewContainerView = MainActivity.getActivity().findViewById(R.id.mapViewContainerView);
+        AMapManager.mapView = new MapView(MainActivity.getInstance());
+        MapViewContainerView mapViewContainerView = MainActivity.getInstance().findViewById(R.id.mapViewContainerView);
         mapViewContainerView.addView(AMapManager.mapView);
         AMapManager.mapView.onCreate(savedInstanceState);
+        location();
     }
 
     /* 设置定位模式 */
@@ -75,7 +76,7 @@ public class AMapManager {
         myLocationStyle.showMyLocation(true);
         myLocationStyle.radiusFillColor(Color.parseColor("#00000000"));//定位精度圈透明
         myLocationStyle.strokeColor(Color.parseColor("#00000000"));//定位精度圈边缘透明
-        myLocationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.me));
+        myLocationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.ilocation));
         aMap.setMyLocationStyle(myLocationStyle);
         aMap.getUiSettings().setMyLocationButtonEnabled(true);
         aMap.setMyLocationEnabled(true);
@@ -100,7 +101,7 @@ public class AMapManager {
         @Override
         public View getInfoContents(Marker marker) {
             if (infoWindow == null) {
-                infoWindow = LayoutInflater.from(MainActivity.getActivity().getApplicationContext()).inflate(
+                infoWindow = LayoutInflater.from(MainActivity.getInstance().getApplicationContext()).inflate(
                         R.layout.infowindow, null);
             }
             ((TextView) infoWindow.findViewById(R.id.text)).setText(marker.getTitle());
@@ -124,19 +125,19 @@ public class AMapManager {
                     return;
                 }
             }
-            AlertDialog dialog = new AlertDialog.Builder(MainActivity.getActivity())
+            AlertDialog dialog = new AlertDialog.Builder(MainActivity.getInstance())
                     .setTitle("拨号")
                     .setMessage("是否拨打 " + num)
                     .setNegativeButton("确定", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            if (ContextCompat.checkSelfPermission(MainActivity.getActivity(), Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-                                ActivityCompat.requestPermissions(MainActivity.getActivity(), new String[]{Manifest.permission.CALL_PHONE}, 0x003);
+                            if (ContextCompat.checkSelfPermission(MainActivity.getInstance(), Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(MainActivity.getInstance(), new String[]{Manifest.permission.CALL_PHONE}, 0x003);
                             } else {
 //                                Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + num));
-//                                MainActivity.getActivity().startActivity(intent);
+//                                MainActivity.getInstance().startActivity(intent);
 //                                dialog.dismiss();
-                                Toast.makeText(MainActivity.getActivity(), "测试版暂时关闭拨号功能", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.getInstance(), "测试版暂时关闭拨号功能", Toast.LENGTH_SHORT).show();
                             }
                         }
                     })
@@ -285,36 +286,37 @@ public class AMapManager {
 
     public void setOnPositionChangedListener(OnPositionChangedListener onPositionChangedListener) {
         this.onPositionChangedListener = onPositionChangedListener;
-        tiemHandler.sendEmptyMessageDelayed(0, 5000);
+        tiemHandler.sendEmptyMessageDelayed(0, 8000);
     }
 
-//    private void location() {
-//        AMapLocationClient aMapLocationClient;
-//        AMapLocationClientOption aMapLocationClientOption;
-//        aMapLocationClient = new AMapLocationClient(MainActivity.getActivity());
-//        aMapLocationClient.setLocationListener(this);
-//        aMapLocationClientOption = new AMapLocationClientOption();
-//        aMapLocationClientOption.setLocationMode(AMapLocationClientOption.AMapLocationMode.Hight_Accuracy);
-//        aMapLocationClientOption.setNeedAddress(true);
-//        aMapLocationClientOption.setOnceLocation(false);
-//        aMapLocationClientOption.setWifiActiveScan(true);
-//        aMapLocationClientOption.setMockEnable(false);
-//        aMapLocationClientOption.setInterval(1000);
-//        aMapLocationClientOption.setLocationCacheEnable(false);
-//        aMapLocationClientOption.setOnceLocationLatest(true);
-//        aMapLocationClient.setLocationOption(aMapLocationClientOption);
-//        aMapLocationClient.startLocation();
-//
-//    }
-//
-//
-//    @Override
-//    public void onLocationChanged(AMapLocation aMapLocation) {
-//        StringBuilder userPosition = new StringBuilder("");
-//        userPosition.append(aMapLocation.getProvince());
-//        userPosition.append(aMapLocation.getCity());
-//        userPosition.append(aMapLocation.getDistrict());
-//        userPosition.append(aMapLocation.getStreet());
-//        Toast.makeText(MainActivity.getActivity(), userPosition.toString(), Toast.LENGTH_SHORT).show();
-//    }
+    private void location() {
+        AMapLocationClient aMapLocationClient;
+        AMapLocationClientOption aMapLocationClientOption;
+        aMapLocationClient = new AMapLocationClient(MainActivity.getInstance());
+        aMapLocationClient.setLocationListener(new AMapLocationListener() {
+            @Override
+            public void onLocationChanged(AMapLocation aMapLocation) {
+                setUserPosition(aMapLocation);
+            }
+        });
+        aMapLocationClientOption = new AMapLocationClientOption();
+        aMapLocationClientOption.setLocationMode(AMapLocationClientOption.AMapLocationMode.Battery_Saving);
+        aMapLocationClientOption.setNeedAddress(true);
+        aMapLocationClientOption.setWifiActiveScan(true);
+        aMapLocationClientOption.setMockEnable(false);
+        aMapLocationClientOption.setInterval(5000);
+        aMapLocationClientOption.setLocationCacheEnable(false);
+        aMapLocationClientOption.setOnceLocationLatest(true);
+        aMapLocationClient.setLocationOption(aMapLocationClientOption);
+        aMapLocationClient.startLocation();
+    }
+
+    private String userPosition = "";
+
+    private void setUserPosition(AMapLocation aMapLocation) {
+        if (!userPosition.equals(aMapLocation.getProvince() + aMapLocation.getCity() + aMapLocation.getDistrict() + aMapLocation.getStreet())) {
+            userPosition = aMapLocation.getProvince() + aMapLocation.getCity() + aMapLocation.getDistrict() + aMapLocation.getStreet();
+            ViewManager.getInstance().setUserPosition(userPosition);
+        }
+    }
 }

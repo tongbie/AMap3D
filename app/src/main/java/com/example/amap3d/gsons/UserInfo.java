@@ -7,6 +7,15 @@ public class UserInfo {
     private String remark;
     private long time;
 
+    public UserInfo(){}
+
+    public void setUserInfo(UserInfo userInfo) {
+        this.userName = userInfo.getUserName();
+        this.displayName = userInfo.getDisplayName();
+        this.remark = userInfo.getRemark();
+        this.time = userInfo.getTime();
+    }
+
     public String getUserName() {
         return userName;
     }

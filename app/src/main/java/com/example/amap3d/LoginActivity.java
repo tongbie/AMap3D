@@ -17,6 +17,7 @@ import android.webkit.WebViewClient;
 
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.datas.Fields;
+import com.example.amap3d.managers.PeopleManager;
 import com.example.amap3d.managers.StorageManager;
 
 public class LoginActivity extends AppCompatActivity {
@@ -67,6 +68,8 @@ public class LoginActivity extends AppCompatActivity {
         webView.loadUrl("http://bus.mysdnu.cn/login");
     }
 
+    String[] oauthKeys = new String[2];
+
     class MyWebViewClient extends WebViewClient {
 
         public boolean shouldOverrideUrlLoading(WebView webview, String url) {
@@ -79,11 +82,7 @@ public class LoginActivity extends AppCompatActivity {
             String returnUrl = webView.getUrl();
             if (returnUrl.contains("oauth_verifier") && (!returnUrl.contains("oauth_verifier=null"))) {
                 try {
-                    String[] oauthKeys = splitReturnUrl(returnUrl);
-                    if (oauthKeys[0] != null && oauthKeys[1] != null) {
-                        StorageManager.storage(Fields.STORAGE_OAUTH_TOKEN, oauthKeys[0]);
-                        StorageManager.storage(Fields.STORAGE_OAUTH_VERIFIER, oauthKeys[1]);
-                    }
+                    oauthKeys = splitReturnUrl(returnUrl);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -93,8 +92,8 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+
     private String[] splitReturnUrl(String s) {
-        String[] oauthKeys = new String[]{null, null};
         String[] splittedStrings = s.split("#");
         String splittedString = "";
         for (String string : splittedStrings) {
@@ -110,8 +109,23 @@ public class LoginActivity extends AppCompatActivity {
         return oauthKeys;
     }
 
+
     @Override
     protected void onDestroy() {
+        try {
+            final String oauth_token = oauthKeys[0];
+            final String oauth_verifier = oauthKeys[1];
+            if (oauth_token != null && oauth_verifier != null) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        PeopleManager.getInstance().attemptLogin(oauth_token, oauth_verifier);
+                    }
+                }).start();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         if (webView != null) {
             webView.loadDataWithBaseURL(null, "", "text/html", "utf-8", null);
             webView.clearHistory();

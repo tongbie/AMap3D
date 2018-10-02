@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private static Activity activity;
     private ExecutorService refreshExecutorService;
 
-    public static Activity getActivity() {
+    public static Activity getInstance() {
         return activity;
     }
 
@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initView(Bundle savedInstanceState) {
         refreshExecutorService = Executors.newFixedThreadPool(1);
-        ViewManager.getInstance().initView();
+        ViewManager.getInstance().initViewInNewThread();
         AMapManager.getInstance().initMapView(savedInstanceState);
         if (AMapManager.aMap == null) {
             AMapManager.aMap = AMapManager.mapView.getMap();

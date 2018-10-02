@@ -25,7 +25,7 @@ public class StorageManager {
 
     /*写Cookie*/
     public static void storage(String key, List<Cookie> cookieList) {
-        sharedPreferences = MainActivity.getActivity().getSharedPreferences(key, MODE_PRIVATE);
+        sharedPreferences = MainActivity.getInstance().getSharedPreferences(key, MODE_PRIVATE);
         editor = sharedPreferences.edit();
         List<CookieGson> cookieGsonList = new ArrayList<>();
         for (Cookie cookie : cookieList) {
@@ -39,7 +39,7 @@ public class StorageManager {
 
     /*拿Cookie*/
     public static List<Cookie> getCookieList(String key) {
-        sharedPreferences = MainActivity.getActivity().getSharedPreferences(key, MODE_PRIVATE);
+        sharedPreferences = MainActivity.getInstance().getSharedPreferences(key, MODE_PRIVATE);
         String cookieString = sharedPreferences.getString(key, null);
         List<Cookie> cookieList = new ArrayList<>();
         if (cookieString != null) {
@@ -68,19 +68,19 @@ public class StorageManager {
     }
 
     public static void storage(String key, String content) {
-        sharedPreferences = MainActivity.getActivity().getSharedPreferences(key, MODE_PRIVATE);
+        sharedPreferences = MainActivity.getInstance().getSharedPreferences(key, MODE_PRIVATE);
         editor = sharedPreferences.edit();
         editor.putString(key, content);
         editor.commit();
     }
 
     public static String get(String key) {
-        sharedPreferences = MainActivity.getActivity().getSharedPreferences(key, MODE_PRIVATE);
+        sharedPreferences = MainActivity.getInstance().getSharedPreferences(key, MODE_PRIVATE);
         return sharedPreferences.getString(key, null);
     }
 
     public static void delete(String key) {
-        sharedPreferences = MainActivity.getActivity().getSharedPreferences(key, MODE_PRIVATE);
+        sharedPreferences = MainActivity.getInstance().getSharedPreferences(key, MODE_PRIVATE);
         editor = sharedPreferences.edit();
         editor.remove(key);
         editor.apply();

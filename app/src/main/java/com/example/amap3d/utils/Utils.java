@@ -3,7 +3,6 @@ package com.example.amap3d.utils;
 import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
-import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -33,10 +32,10 @@ public class Utils {
     }
 
     public static void uiToast(final String text) {
-        MainActivity.getActivity().runOnUiThread(new Runnable() {
+        MainActivity.getInstance().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(MainActivity.getActivity(), text, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.getInstance(), text, Toast.LENGTH_SHORT).show();
             }
         });
     }

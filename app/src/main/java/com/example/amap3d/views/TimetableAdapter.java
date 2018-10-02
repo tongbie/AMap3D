@@ -23,7 +23,7 @@ public class TimetableAdapter extends RecyclerView.Adapter<TimetableAdapter.View
 
     @Override
     public TimetableAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        @SuppressLint("InflateParams") View view = LayoutInflater.from(MainActivity.getActivity()).inflate(R.layout.item_timetable, null);
+        @SuppressLint("InflateParams") View view = LayoutInflater.from(MainActivity.getInstance()).inflate(R.layout.item_timetable, null);
         return new ViewHolder(view);
     }
 
