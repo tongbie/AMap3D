@@ -3,9 +3,11 @@ package com.example.amap3d.managers;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -31,13 +33,16 @@ import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.MyLocationStyle;
+import com.amap.api.maps.model.VisibleRegion;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.MainActivity;
+import com.example.amap3d.datas.Fields;
 import com.example.amap3d.gsons.BusPositionGson;
 import com.example.amap3d.R;
 import com.example.amap3d.utils.Utils;
 import com.example.amap3d.views.MapViewContainerView;
+import com.example.amap3d.views.ScrollLayout;
 
 import java.util.Arrays;
 
@@ -45,7 +50,7 @@ import java.util.Arrays;
  * Created by BieTong on 2018/3/20.
  */
 
-public class AMapManager {
+public class AMapManager/* implements ScrollLayout.OnScrollLayoutStateChangeListener*/ {
     private static AMapManager aMapManager;
     public static AMap aMap;
     public static MapView mapView;
@@ -134,10 +139,13 @@ public class AMapManager {
                             if (ContextCompat.checkSelfPermission(MainActivity.getInstance(), Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
                                 ActivityCompat.requestPermissions(MainActivity.getInstance(), new String[]{Manifest.permission.CALL_PHONE}, 0x003);
                             } else {
-//                                Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + num));
-//                                MainActivity.getInstance().startActivity(intent);
-//                                dialog.dismiss();
-                                Toast.makeText(MainActivity.getInstance(), "测试版暂时关闭拨号功能", Toast.LENGTH_SHORT).show();
+                                if (StorageManager.getSetting(Fields.SETTING_CALL)) {
+                                    Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + num));
+                                    MainActivity.getInstance().startActivity(intent);
+                                    dialog.dismiss();
+                                } else {
+                                    Toast.makeText(MainActivity.getInstance(), "请在调试设置中开启拨号功能", Toast.LENGTH_SHORT).show();
+                                }
                             }
                         }
                     })
@@ -180,19 +188,19 @@ public class AMapManager {
 
     /* 添加校车定位点 */
     public synchronized void addBusMarker() {
-        if (Datas.busPositionList == null) {
+        if (Datas.getBusPositionList() == null) {
             Utils.uiToast("校车位置获取失败");
             return;
         }
-        for (BusPositionGson busPosition : Datas.busPositionList) {
+        for (BusPositionGson busPosition : Datas.getBusPositionList()) {
             String key = busPosition.getGPSDeviceIMEI();
             LatLng latLng = new LatLng(Double.parseDouble(busPosition.getLat()), Double.parseDouble(busPosition.getLng()));
             Marker marker = aMap.addMarker(new MarkerOptions()
                     .position(latLng)
-                    .title(Datas.busInformationMap.get(key)[0])
-                    .snippet(Datas.busInformationMap.get(key)[1]));
+                    .title(Datas.getBusInformationMap().get(key)[0])
+                    .snippet(Datas.getBusInformationMap().get(key)[1]));
             marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus1));
-            Datas.busMarkerMap.put(key, marker);
+            Datas.getBusMarkerMap().put(key, marker);
         }
     }
 
@@ -204,20 +212,20 @@ public class AMapManager {
         smoothMarker.setPoints(Arrays.asList(latLngs));
         smoothMarker.setTotalDuration(3);
         smoothMarker.startSmoothMove();
-        Datas.busMarkerMap.get(key).setVisible(false);
+        Datas.getBusMarkerMap().get(key).setVisible(false);
         smoothMarker.setMoveListener(new SmoothMoveMarker.MoveListener() {
             @Override
             public void move(double distance) {
                 if (distance == 0) {
                     smoothMarker.stopMove();
                     smoothMarker.removeMarker();
-                    Datas.busMarkerMap.get(key).setVisible(true);
+                    Datas.getBusMarkerMap().get(key).setVisible(true);
                 }
             }
         });
     }
 
-    public void removeAllMarker() {
+    void removeAllMarker() {
         aMap.clear();
     }
 
@@ -284,7 +292,7 @@ public class AMapManager {
         void onPositionChanged(double longitude, double latitude);
     }
 
-    public void setOnPositionChangedListener(OnPositionChangedListener onPositionChangedListener) {
+    void setOnPositionChangedListener(OnPositionChangedListener onPositionChangedListener) {
         this.onPositionChangedListener = onPositionChangedListener;
         tiemHandler.sendEmptyMessageDelayed(0, 8000);
     }
@@ -319,4 +327,23 @@ public class AMapManager {
             ViewManager.getInstance().setUserPosition(userPosition);
         }
     }
+
+//    @Override
+//    public void startingScrollUp(int currentHeight) {
+//        moveAmap(currentHeight);
+//    }
+//
+//    @Override
+//    public void scrollDownEnd(int currentHeight) {
+//        moveAmap(currentHeight);
+//    }
+//
+//    private void moveAmap(int pixels) {
+//        VisibleRegion visibleRegion = aMap.getProjection().getVisibleRegion();
+//        LatLng top = visibleRegion.nearLeft;
+//        LatLng bottom = visibleRegion.farLeft;
+//        double scale = pixels / mapView.getHeight();
+//        double center = Math.abs(top.latitude + bottom.latitude) * scale / 2;
+//        aMap.moveCamera(CameraUpdateFactory.changeLatLng(new LatLng(center, lng)));
+//    }
 }

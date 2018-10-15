@@ -64,17 +64,21 @@ public class Utils {
         return context.getResources().getDisplayMetrics().widthPixels;
     }
 
+    public static int getScreenHeight(Context context){
+        return context.getResources().getDisplayMetrics().widthPixels;
+    }
+
     public static boolean isLogin() {
         boolean isLogin = false;
-        if (Datas.userInfo.getUserName() != null && !Datas.userInfo.getUserName().equals("")) {
+        if (Datas.getUserInfo().getUserName() != null && !Datas.getUserInfo().getUserName().equals("")) {
             isLogin = true;
         }
         return isLogin;
     }
 
     public static void clearUserInfo() {
-        Datas.userInfo.setUserName(null);
-        Datas.userInfo.setDisplayName(null);
-        Datas.userInfo.setTime(0);
+        Datas.getUserInfo().setUserName(null);
+        Datas.getUserInfo().setDisplayName(null);
+        Datas.getUserInfo().setTime(0);
     }
 }

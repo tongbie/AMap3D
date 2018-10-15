@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.example.amap3d.pages.FeedBackActivity">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#ffffff">
+
+        <ImageView
+            android:id="@+id/backImage"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_gravity="left"
+            android:padding="15dp"
+            android:src="@drawable/icon_back" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:text="意见反馈"
+            android:textColor="#212121"
+            android:textSize="19dp" />
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="left|bottom"
+        android:paddingLeft="16dp"
+        android:paddingBottom="8dp"
+        android:text="联系方式"
+        android:textSize="14dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#ffffff"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#e9e9eb" />
+
+        <FrameLayout
+            android:id="@+id/qqLayout"
+            android:layout_width="match_parent"
+            android:layout_height="46dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="left"
+                android:layout_marginLeft="16dp"
+                android:gravity="left|center"
+                android:text="QQ"
+                android:textSize="16dp" />
+
+            <TextView
+                android:text="2489550615"
+                android:textSize="16dp"
+                android:textColor="#999999"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="right"
+                android:gravity="center|right"
+                android:layout_marginRight="10dp"/>
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginLeft="16dp"
+            android:background="#e9e9eb" />
+
+        <FrameLayout
+            android:id="@+id/weixinLayout"
+            android:layout_width="match_parent"
+            android:layout_height="46dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="left"
+                android:layout_marginLeft="16dp"
+                android:gravity="left|center"
+                android:text="微信"
+                android:textSize="16dp" />
+
+            <TextView
+                android:text="13665365485"
+                android:textSize="16dp"
+                android:textColor="#999999"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="right"
+                android:gravity="center|right"
+                android:layout_marginRight="10dp"/>
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#e9e9eb" />
+    </LinearLayout>
+</LinearLayout>

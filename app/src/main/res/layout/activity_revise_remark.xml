@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#efeff4"
+    android:orientation="vertical"
+    tools:context="com.example.amap3d.pages.ReviseRemarkActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:background="#f0f0f0" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#ffffff">
+
+        <ImageView
+            android:id="@+id/backImage"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_gravity="left"
+            android:padding="15dp"
+            android:src="@drawable/icon_back" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:text="修改备注"
+            android:textColor="#212121"
+            android:textSize="19dp" />
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:layout_marginTop="7dp"
+        android:background="#ffffff"
+        android:gravity="center|left"
+        android:paddingLeft="10dp"
+        android:text="备注信息"
+        android:textColor="#212121"
+        android:textSize="17dp"
+        tools:ignore="RtlHardcoded" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:background="#f0f0f0" />
+
+    <EditText
+        android:id="@+id/remarkEdit"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:background="#ffffff"
+        android:gravity="top|left"
+        android:padding="10dp"
+        tools:ignore="RtlHardcoded" />
+
+    <TextView
+        android:id="@+id/wordCountTextView"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:background="#ffffff"
+        android:gravity="right"
+        android:paddingRight="10dp"
+        android:textColor="#808080"
+        tools:ignore="RtlHardcoded,RtlSymmetry" />
+
+    <Button
+        android:id="@+id/uploadButton"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_margin="15dp"
+        android:background="#8ab3fb"
+        android:text="提交"
+        android:textColor="#ffffff"
+        android:textSize="18dp" />
+</LinearLayout>

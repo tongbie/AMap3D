@@ -12,7 +12,7 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ofo_item_login" />
+            android:src="@drawable/ofo_icon_login" />
 
         <TextView
             android:layout_width="wrap_content"

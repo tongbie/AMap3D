@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.widget.Toast;
 
 import com.example.amap3d.datas.Datas;
@@ -16,6 +17,8 @@ import com.example.amap3d.managers.PeopleManager;
 import com.example.amap3d.managers.UpdateManager;
 import com.example.amap3d.managers.ViewManager;
 import com.example.amap3d.utils.Utils;
+import com.example.amap3d.views.ScrollLayout;
+import com.example.amap3d.views.ofoMenuView.OfoMenuManager;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -87,22 +90,34 @@ public class MainActivity extends AppCompatActivity {
         refreshExecutorService.submit(requireAllDataRunnable);
     }
 
-    private Runnable requireAllDataRunnable =new Runnable() {
+    private Runnable requireAllDataRunnable = new Runnable() {
         @Override
         public void run() {
             try {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            ViewManager.getInstance().setTimetableHintTextInUiThread("数据加载中...");
+                            PeopleManager.getInstance().requireAllPosition();
+                            PeopleManager.getInstance().requireUserInfo();
+                            BusManager.getInstance().requireBusTimetable();
+                        } catch (Exception e) {
+                            Utils.uiToast("数据获取失败");
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
                 MQTTManager.getInstance().isShowMoving = true;
                 BusManager.getInstance().requireBusInformation();
-                Datas.busPositionList = BusManager.getInstance().requireBusPosition();
+                Datas.setBusPositionList(BusManager.getInstance().requireBusPosition());
                 AMapManager.getInstance().addBusMarker();
                 MQTTManager.getInstance().linkMQTT(MQTTManager.getInstance().mqttCallback);
-                PeopleManager.getInstance().requireAllPosition();
-//                PeopleManager.getInstance().attemptLogin();
-                PeopleManager.getInstance().requireUserInfo();
                 ViewManager.getInstance().refreshButton.setRefreshing(false);
                 ViewManager.getInstance().isRefreshing = false;
-            }catch (Exception e){
+            } catch (Exception e) {
                 Utils.uiToast("数据获取失败");
+                e.printStackTrace();
             }
         }
     };
@@ -155,5 +170,32 @@ public class MainActivity extends AppCompatActivity {
         activity = null;
         super.onDestroy();
         System.exit(0);
+    }
+
+    private long lastBackClickTime = 0;
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        OfoMenuManager ofoMenuManager = ViewManager.getInstance().ofoMenuManager;
+        if (ofoMenuManager.isOpen()) {
+            ofoMenuManager.close();
+            return true;
+        }
+        ScrollLayout scrollLayout = ViewManager.getInstance().scrollLayout;
+        if (scrollLayout.isOpen()) {
+            scrollLayout.close();
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+            if ((System.currentTimeMillis() - lastBackClickTime) > 1500) {
+                Toast.makeText(MainActivity.this, "再按一次退出", Toast.LENGTH_SHORT).show();
+                lastBackClickTime = System.currentTimeMillis();
+            } else {
+                finish();
+            }
+            return true;
+        }
+
+        return super.onKeyDown(keyCode, event);
     }
 }

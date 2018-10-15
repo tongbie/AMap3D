@@ -12,13 +12,13 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ofo_icon_remark"/>
+            android:src="@drawable/ofo_icon_debug" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:text="修改备注"
+            android:layout_marginStart="10dp"
+            android:text="调试设置"
             android:textSize="16sp" />
 
     </LinearLayout>

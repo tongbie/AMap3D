@@ -1,9 +1,7 @@
 package com.example.amap3d.managers;
 
 import android.os.Build;
-import android.util.Log;
 
-import com.example.amap3d.datas.Datas;
 import com.example.amap3d.datas.Fields;
 import com.example.amap3d.gsons.MQTTAccountGson;
 import com.example.amap3d.utils.Utils;
@@ -30,9 +28,7 @@ public class MQTTManager {
     private MqttConnectOptions mqttOptions;
     public MqttClient mqttClient;
     public static String deviceId;
-    private static final String applyForMqttAccountURL = "http://bus.mysdnu.cn/bus/mqtt";
-    private static final String linkMqttURL = "tcp://bus.mysdnu.cn:1880";
-    private static final String mqttTopic = "BusMoveList";
+
     public boolean isShowMoving = true;
 
     public static MQTTManager getInstance() {
@@ -64,7 +60,7 @@ public class MQTTManager {
         }
         try {
             Request request = new Request.Builder()
-                    .url(applyForMqttAccountURL)
+                    .url(Fields.URL_APPLY_FOR_MQTT)
                     .build();
             Response response = Utils.client.newCall(request).execute();
             String responseData = response.body().string();
@@ -76,13 +72,14 @@ public class MQTTManager {
                 //断线不支持重连，必须申请新的username
                 mqttOptions.setUserName(username);
                 mqttOptions.setPassword(password.toCharArray());
-                mqttClient = new MqttClient(linkMqttURL, deviceId, new MemoryPersistence());
+                mqttClient = new MqttClient(Fields.URL_LINK_MQTT, deviceId, new MemoryPersistence());
                 mqttClient.setCallback(mqttCallback);
                 mqttClient.connect(mqttOptions);
-                subscribeTopic(mqttTopic);
-                subscribeTopic(Fields.MQTT_TITLE_UPLOAD_POSITION);
-                //TODO:
-                subscribeTopic("BusMoveLis");
+                subscribeTopic(Fields.MQTT_TOPIC_BUS_MOVE);
+                subscribeTopic(Fields.MQTT_TOPIC_UPLOAD_POSITION);
+                if (StorageManager.getSetting(Fields.SETTING_RECEIVE)) {
+                    subscribeTopic("BusMoveLis");
+                }
             }
         } catch (SocketTimeoutException e) {
             Utils.uiToast("连接超时，请检查网络设置");
@@ -93,13 +90,22 @@ public class MQTTManager {
     }
 
     /* 订阅消息 */
-    private void subscribeTopic(String topic) {
+    public void subscribeTopic(String topic) {
         if (mqttClient != null) {
             try {
                 mqttClient.subscribe(topic, 0);
             } catch (MqttException e) {
                 e.printStackTrace();
-                Log.e("subscribeTopic", e.getMessage());
+            }
+        }
+    }
+
+    public void unSubscribeTopic(String topic){
+        if (mqttClient != null) {
+            try {
+                mqttClient.unsubscribe(topic);
+            } catch (MqttException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -127,11 +133,11 @@ public class MQTTManager {
 
         @Override
         public void messageArrived(String topic, MqttMessage message) {
-            if (isShowMoving && topic.equals(mqttTopic)) {
+            if (isShowMoving && topic.equals(Fields.MQTT_TOPIC_BUS_MOVE)) {
                 BusManager.getInstance().moveBus(message);
-            } else if (topic.equals(Fields.MQTT_TITLE_UPLOAD_POSITION)) {
+            } else if (topic.equals(Fields.MQTT_TOPIC_UPLOAD_POSITION)) {
                 PeopleManager.getInstance().receiveMqttMessage(message);
-            }else if(topic.equals("BusMoveLis")){
+            } else if (topic.equals("BusMoveLis")) {
                 BusManager.getInstance().moveTestBus(message);
             }
         }

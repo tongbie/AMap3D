@@ -3,6 +3,7 @@ package com.example.amap3d.managers;
 import android.content.SharedPreferences;
 
 import com.example.amap3d.MainActivity;
+import com.example.amap3d.datas.Fields;
 import com.example.amap3d.gsons.CookieGson;
 import com.example.amap3d.utils.Utils;
 import com.google.gson.reflect.TypeToken;
@@ -72,6 +73,30 @@ public class StorageManager {
         editor = sharedPreferences.edit();
         editor.putString(key, content);
         editor.commit();
+    }
+
+    public static void storage(String key, String content, String fileName) {
+        sharedPreferences = MainActivity.getInstance().getSharedPreferences(fileName, MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+        editor.putString(key, content);
+        editor.commit();
+    }
+
+    public static String get(String key, String fileName) {
+        sharedPreferences = MainActivity.getInstance().getSharedPreferences(fileName, MODE_PRIVATE);
+        return sharedPreferences.getString(key, null);
+    }
+
+    public static boolean getSetting(String setting) {
+        boolean isOpen = false;
+        sharedPreferences = MainActivity.getInstance().getSharedPreferences(Fields.STORAGE_SETTINGS, MODE_PRIVATE);
+        if (sharedPreferences != null) {
+            String value = sharedPreferences.getString(setting, null);
+            if ("open".equals(value)) {
+                isOpen = true;
+            }
+        }
+        return isOpen;
     }
 
     public static String get(String key) {

@@ -157,9 +157,9 @@ public class ScrollLayout extends LinearLayout {
             return;
         }
         if (isUp) {
-            onScrollLayoutStateChangeListener.startingScrollUp();
+            onScrollLayoutStateChangeListener.startingScrollUp(distanceY);
         } else {
-            onScrollLayoutStateChangeListener.scrollDownEnd();
+            onScrollLayoutStateChangeListener.scrollDownEnd(distanceY);
         }
     }
 
@@ -172,9 +172,9 @@ public class ScrollLayout extends LinearLayout {
 
     public interface OnScrollLayoutStateChangeListener {
 
-        void startingScrollUp();
+        void startingScrollUp(int currentHeight);
 
-        void scrollDownEnd();
+        void scrollDownEnd(int currentHeight);
     }
 }
 

@@ -1,7 +1,6 @@
 package com.example.amap3d.managers;
 
 import android.content.Intent;
-import android.util.Log;
 
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
@@ -38,7 +37,6 @@ import okhttp3.Response;
 public class PeopleManager {
     private static PeopleManager peopleManager;
     private OkHttpClient loginCheckClient;
-    private OkHttpClient requireRemarkClient;
 
     public static PeopleManager getInstance() {
         if (peopleManager == null) {
@@ -59,17 +57,17 @@ public class PeopleManager {
         if (code == 200) {
             List<UploadPositionGson> uploadPositionGsonList = Utils.gson.fromJson(data, new TypeToken<List<UploadPositionGson>>() {
             }.getType());
-            for (Map.Entry<String, Marker> entry : Datas.peopleMap.entrySet()) {
+            for (Map.Entry<String, Marker> entry : Datas.getPeopleMap().entrySet()) {
                 entry.getValue().remove();
             }
-            Datas.peopleMap.clear();
+            Datas.getPeopleMap().clear();
             for (UploadPositionGson peopleGson : uploadPositionGsonList) {
                 LatLng latLng = new LatLng(Double.parseDouble(peopleGson.getLat()), Double.parseDouble(peopleGson.getLng()));
                 Marker marker = AMapManager.aMap.addMarker(new MarkerOptions()
                         .position(latLng)
                         .title("ID" + peopleGson.getDeviceId()));
                 marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
-                Datas.peopleMap.put(peopleGson.getDeviceId(), marker);
+                Datas.getPeopleMap().put(peopleGson.getDeviceId(), marker);
             }
         }
     }
@@ -87,7 +85,7 @@ public class PeopleManager {
                     uploadPositionGson.setLat(latitude + "");
                     uploadPositionGson.setLng(longitude + "");
                     String uploadPositionJson = Utils.gson.toJson(uploadPositionGson);
-                    MQTTManager.getInstance().publish(Fields.MQTT_TITLE_UPLOAD_POSITION, uploadPositionJson, true);
+                    MQTTManager.getInstance().publish(Fields.MQTT_TOPIC_UPLOAD_POSITION, uploadPositionJson, true);
                 }
             });
         }
@@ -100,7 +98,7 @@ public class PeopleManager {
         AMapManager.getInstance().setOnPositionChangedListener(null);
         try {
             if (MQTTManager.getInstance().mqttClient != null) {
-                MQTTManager.getInstance().mqttClient.unsubscribe(Fields.MQTT_TITLE_UPLOAD_POSITION);
+                MQTTManager.getInstance().mqttClient.unsubscribe(Fields.MQTT_TOPIC_UPLOAD_POSITION);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -120,9 +118,6 @@ public class PeopleManager {
 
                         @Override
                         public List<Cookie> loadForRequest(HttpUrl url) {
-                            for(Cookie cookie:StorageManager.getCookieList(Fields.STORAGE_COOKIE)){
-                                Log.e("Cookie", String.valueOf(cookie));
-                            }
                             return StorageManager.getCookieList(Fields.STORAGE_COOKIE);
                         }
                     })
@@ -141,6 +136,12 @@ public class PeopleManager {
             Response response = getLoginClient().newCall(request).execute();
             String code = String.valueOf(response.code());
             String body = response.body().string();
+            if (code.charAt(0) == '2') {
+                UserInfo userInfo=Utils.gson.fromJson(body, UserInfo.class);
+                Datas.getUserInfo().setDisplayName(userInfo.getDisplayName());
+                Datas.getUserInfo().setUserName(userInfo.getUserName());
+                ViewManager.getInstance().setUserViews(true);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -162,7 +163,7 @@ public class PeopleManager {
                 String body = response.body().string();
                 if (code.charAt(0) == '2') {
                     UserInfo userInfo = Utils.gson.fromJson(body, UserInfo.class);
-                    Datas.userInfo.setUserInfo(userInfo);
+                    Datas.setUserInfo(userInfo);
                     ViewManager.getInstance().setUserViews(true);
                 }
             } catch (Exception e) {
@@ -174,25 +175,27 @@ public class PeopleManager {
     }
 
     /*上传备注*/
-    public void uploadRemark(String text) {
+    public void uploadRemark(String text, boolean isUploadPosition) {
         if (uploadPostionService == null) {
             uploadPostionService = Executors.newFixedThreadPool(1);
         }
-        uploadPostionService.submit(new UploadRemarkRunnable(text));
+        uploadPostionService.submit(new UploadRemarkRunnable(text, isUploadPosition));
     }
 
     private class UploadRemarkRunnable implements Runnable {
         String text;
+        boolean isUploadPosition;
 
-        UploadRemarkRunnable(String text) {
+        UploadRemarkRunnable(String text, boolean isUploadPosition) {
             this.text = text;
+            this.isUploadPosition = isUploadPosition;
         }
 
         @Override
         public void run() {
             try {
                 FormBody.Builder builder = new FormBody.Builder();
-                builder.add("remark", text);
+                builder.add("remark", text == null ? "" : text);
                 RequestBody requestBody = builder.build();
                 Request request = new Request.Builder()
                         .url("http://bus.mysdnu.cn/users/bind/" + MQTTManager.deviceId)
@@ -202,7 +205,11 @@ public class PeopleManager {
                 String code = String.valueOf(response.code());
                 String body = response.body().string();
                 if (code.charAt(0) == '2' && body.contains("success")) {
-                    uploadPosition();
+                    if (isUploadPosition) {
+                        uploadPosition();
+                    } else {
+                        Utils.uiToast("修改成功");
+                    }
                 } else if (body.contains("place login")) {
                     MainActivity.getInstance().startActivity(new Intent(MainActivity.getInstance(), LoginActivity.class));
                     Utils.clearUserInfo();
@@ -217,36 +224,36 @@ public class PeopleManager {
         }
     }
 
-    public void receiveMqttMessage(MqttMessage message) {
+    void receiveMqttMessage(MqttMessage message) {
         try {
             String data = message.toString();
             UploadPositionGson peopleGson = Utils.gson.fromJson(data, UploadPositionGson.class);
             String deviceId = peopleGson.getDeviceId();
             boolean isShowingInfoWindow = false;
-            if (Datas.peopleMap.containsKey(deviceId)) {
-                Marker marker = Datas.peopleMap.get(deviceId);
+            if (Datas.getPeopleMap().containsKey(deviceId)) {
+                Marker marker = Datas.getPeopleMap().get(deviceId);
                 if (marker.isInfoWindowShown()) {
                     isShowingInfoWindow = true;
                 }
                 marker.remove();
-                Datas.peopleMap.remove(deviceId);
+                Datas.getPeopleMap().remove(deviceId);
             }
             LatLng latLng = new LatLng(Double.parseDouble(peopleGson.getLat()), Double.parseDouble(peopleGson.getLng()));
             Marker marker = AMapManager.aMap.addMarker(new MarkerOptions()
                     .position(latLng)
-                    .snippet(Datas.currentInfoWindowRemark)
+                    .snippet(Datas.getCurrentInfoWindowRemark())
                     .title("ID" + deviceId));
             marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
             if (isShowingInfoWindow) {
                 marker.showInfoWindow();
             }
-            Datas.peopleMap.put(deviceId, marker);
+            Datas.getPeopleMap().put(deviceId, marker);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void requireRemark(String deviceId, final Marker marker) {
+    void requireRemark(String deviceId, final Marker marker) {
         String remark;
         Request request = new Request.Builder()
                 .url("http://bus.mysdnu.cn/users/reportInfo/" + deviceId)
@@ -255,11 +262,10 @@ public class PeopleManager {
             Response response = getLoginClient().newCall(request).execute();
             String code = String.valueOf(response.code());
             String data = response.body().string();
-            Log.e("requireRemark", code + " " + data);
             if (code.charAt(0) == '2') {
                 PeopleRemarkGson peopleRemarkGson = Utils.gson.fromJson(data, PeopleRemarkGson.class);
                 remark = peopleRemarkGson.getRemark();
-                Datas.currentInfoWindowRemark = remark;
+                Datas.setCurrentInfoWindowRemark(remark);
                 final String finalRemark = remark;
                 MainActivity.getInstance().runOnUiThread(new Runnable() {
                     @Override
@@ -267,14 +273,14 @@ public class PeopleManager {
                         marker.setSnippet(finalRemark);
                         String deviceId = marker.getTitle().substring(2);
                         LatLng latLng = marker.getPosition();
-                        Datas.peopleMap.get(deviceId).remove();
-                        Datas.peopleMap.remove(deviceId);
+                        Datas.getPeopleMap().get(deviceId).remove();
+                        Datas.getPeopleMap().remove(deviceId);
                         Marker newMarker = AMapManager.aMap.addMarker(new MarkerOptions()
                                 .position(latLng)
                                 .snippet(finalRemark)
                                 .title("ID" + deviceId));
                         newMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
-                        Datas.peopleMap.put(deviceId, newMarker);
+                        Datas.getPeopleMap().put(deviceId, newMarker);
                         newMarker.showInfoWindow();
                     }
                 });

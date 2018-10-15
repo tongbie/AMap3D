@@ -22,8 +22,10 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.amap3d.pages.DebugSettingActivity;
 import com.example.amap3d.LoginActivity;
 import com.example.amap3d.R;
+import com.example.amap3d.pages.ReviseRemarkActivity;
 import com.example.amap3d.datas.Fields;
 import com.example.amap3d.utils.Utils;
 import com.example.amap3d.datas.Datas;
@@ -49,7 +51,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
     private static ViewManager viewManager;
 
     public RefreshButton refreshButton;
-    private ScrollLayout scrollLayout;
+    public ScrollLayout scrollLayout;
     private TextView timetableHintText;
     private PopupWindow popupWindow;
     private ImageView timetableImage;
@@ -69,10 +71,13 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         return viewManager;
     }
 
+//    Handler createViewHandler = null;
+
     public void initViewInNewThread() {
         new Thread(new Runnable() {
             @Override
             public void run() {
+//                createViewHandler = new Handler();
                 Activity mainActivity = MainActivity.getInstance();
                 refreshButton = mainActivity.findViewById(R.id.refreshButton);
                 refreshButton.setOnClickListener(ViewManager.this);
@@ -84,12 +89,12 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                 userNameText = mainActivity.findViewById(R.id.userNameText);
                 userPositionText = mainActivity.findViewById(R.id.userPositionText);
                 initUploadRemarkWindow();
-                requireBusTimetable();
                 timetableHintText.setOnClickListener(ViewManager.this);
                 userImage.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         loginWithJudge(null);
+                        closeScrollLayoutWithJudge();
                     }
                 });
                 mainActivity.findViewById(R.id.uploadPositionLayout).setOnClickListener(ViewManager.this);
@@ -99,17 +104,17 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         }).start();
     }
 
-    private void loginWithJudge(String nullAbleText){
-        if(!Utils.isLogin()){
+    private void loginWithJudge(String nullAbleText) {
+        if (!Utils.isLogin()) {
             MainActivity.getInstance().startActivity(new Intent(MainActivity.getInstance(), LoginActivity.class));
-        }else {
-            if(nullAbleText!=null){
+        } else {
+            if (nullAbleText != null) {
                 Toast.makeText(MainActivity.getInstance(), nullAbleText, Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    public void setUserPosition(String userPosition){
+    void setUserPosition(String userPosition) {
         userPositionText.setText(userPosition);
     }
 
@@ -124,12 +129,12 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
 
         @SuppressLint("InflateParams") View view = LayoutInflater.from(MainActivity.getInstance().getApplicationContext()).inflate(R.layout.window_upload_position, null);
         final TextView wordCountTextView = view.findViewById(R.id.wordCountTextView);
-        wordCountTextView.setText("(0/50)");
+        wordCountTextView.setText("(0/30)");
         final EditText editText = view.findViewById(R.id.uploadEditText);
         String positionRemark = StorageManager.get(Fields.STORAGE_REMARK);
         if (positionRemark != null) {
             editText.setText(positionRemark);
-            wordCountTextView.setText("(" + positionRemark.length() + "/50)");
+            wordCountTextView.setText("(" + positionRemark.length() + "/30)");
         }
         editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -139,16 +144,18 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         });
         editText.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
 
             @SuppressLint("SetTextI18n")
             @Override
             public void afterTextChanged(Editable s) {
                 int content = editText.getText().length();
-                wordCountTextView.setText("(" + content + "/50)");
+                wordCountTextView.setText("(" + content + "/30)");
             }
         });
         view.findViewById(R.id.completeButton).setOnClickListener(new View.OnClickListener() {
@@ -157,10 +164,10 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                 popupWindow.dismiss();
                 String text = editText.getText().toString();
                 StorageManager.storage(Fields.STORAGE_REMARK, text);
-                if (text.length() > 50) {
+                if (text.length() > 30) {
                     Toast.makeText(MainActivity.getInstance(), "字数超过限制", Toast.LENGTH_SHORT).show();
                 } else {
-                    PeopleManager.getInstance().uploadRemark(text);
+                    PeopleManager.getInstance().uploadRemark(text, true);
                 }
             }
         });
@@ -189,6 +196,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                 popupWindow.showAtLocation(MainActivity.getInstance().getWindow().getDecorView(), Gravity.CENTER, 0, 0);
                 break;
             case R.id.settingLayout:
+                closeScrollLayoutWithJudge();
                 if (ofoMenuManager != null && !ofoMenuManager.isOpen()) {
                     ofoMenuManager.open();
                 }
@@ -202,9 +210,13 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                     timetableImage.setImageResource(R.drawable.icon_map);
                 }
                 break;
-            case R.id.userImage:
-                break;
             default:
+        }
+    }
+
+    private void closeScrollLayoutWithJudge() {
+        if (scrollLayout.isOpen()) {
+            scrollLayout.close();
         }
     }
 
@@ -221,19 +233,27 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
     }
 
     @Override
-    public void startingScrollUp() {
+    public void startingScrollUp(int currentHeight) {
         timetableHintText.setText("显示地图");
     }
 
     @Override
-    public void scrollDownEnd() {
+    public void scrollDownEnd(int currentHeight) {
         timetableHintText.setText("校车时刻");
     }
 
-    private void requireBusTimetable() {
-        timetableHintText.setText("数据加载中...");
-        String data = "{\"千佛山校区 → 长清湖校区\":[{\"routeOrder\":1,\"routeTitle\":\"千佛山校区 → 长清湖校区\",\"routeStart\":\"学校北门\",\"timeOrder\":1,\"timeTitle\":\"7月7日～7月13日\",\"timeList\":\"7:10,13:00,18:00\"}],\"长清湖校区 → 千佛山校区\":[{\"routeOrder\":2,\"routeTitle\":\"长清湖校区 → 千佛山校区\",\"routeStart\":\"教学楼、大学生活动中心\",\"timeOrder\":1,\"timeTitle\":\"7月7日～7月13日\",\"timeList\":\"7:00  11:50  16:40,17:30,21:00\"}],\"龙泉山庄 →阳光舜城 → 长清湖校区\":[{\"routeOrder\":3,\"routeTitle\":\"龙泉山庄 →阳光舜城 → 长清湖校区\",\"routeStart\":\"龙泉山庄\",\"timeOrder\":1,\"timeTitle\":\"7月7日～7月13日\",\"timeList\":\"7:10,13:00\"}],\"长清湖校区 → 阳光舜城 → 龙泉山庄\":[{\"routeOrder\":4,\"routeTitle\":\"长清湖校区 → 阳光舜城 → 龙泉山庄\",\"routeStart\":\"教学楼、大学生活动中心\",\"timeOrder\":1,\"timeTitle\":\"7月7日～7月13日\",\"timeList\":\"11:50  17:30\"}]}";
-        decodeTimetable(data);
+    public void setBusTimetableInUiThread(final List<Map<String, String>> timetableList) {
+        final LinearLayoutManager linearLayoutManager = new LinearLayoutManager(MainActivity.getInstance());
+        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        MainActivity.getInstance().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                final RecyclerView recyclerView = MainActivity.getInstance().findViewById(R.id.recycleView);
+                recyclerView.setLayoutManager(linearLayoutManager);
+                recyclerView.setAdapter(new TimetableAdapter(timetableList));
+                timetableHintText.setText("校车时刻");
+            }
+        });
     }
 
     private void decodeTimetable(String result) {
@@ -270,7 +290,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         }
     }
 
-    private OfoMenuManager ofoMenuManager;
+    public OfoMenuManager ofoMenuManager;
 
     private void initOfoMenuView(final Activity mainActivity) {
         Window window = mainActivity.getWindow();
@@ -293,6 +313,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                 .addItemContentView(R.layout.ofo_item_update)
                 .addItemContentView(R.layout.ofo_item_remark)
                 .addItemContentView(R.layout.ofo_itme_position)
+                .addItemContentView(R.layout.ofo_item_debug)
                 .addItemContentView(R.layout.ofo_item_logout)
                 .build();
         ((ViewGroup) mainActivity.findViewById(android.R.id.content)).addView(ofoMenuManager.getRootView());
@@ -308,11 +329,15 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                         ((MainActivity) MainActivity.getInstance()).update("已是最新版本");
                         break;
                     case 2:
+                        MainActivity.getInstance().startActivity(new Intent(MainActivity.getInstance(), ReviseRemarkActivity.class));
                         break;
                     case 3:
-                        PeopleManager.getInstance().uploadRemark(StorageManager.get(Fields.STORAGE_REMARK));
+                        PeopleManager.getInstance().uploadRemark(StorageManager.get(Fields.STORAGE_REMARK), true);
                         break;
                     case 4:
+                        MainActivity.getInstance().startActivity(new Intent(MainActivity.getInstance(), DebugSettingActivity.class));
+                        break;
+                    case 5:
                         StorageManager.delete(Fields.STORAGE_COOKIE);
                         Intent intent = new Intent(MainActivity.getInstance(), LoginActivity.class);
                         intent.putExtra("isLogOut", 1);
@@ -324,15 +349,31 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         });
     }
 
-    public void setUserViews(boolean isLogin){
-        if(isLogin){
-            userImage.setImageResource(R.drawable.icon_login);
-            timetableImage.setImageResource(R.drawable.icon_login);
-            userNameText.setText(Datas.userInfo.getDisplayName());
-        }else {
-            userImage.setImageResource(R.drawable.icon_logout);
-            timetableImage.setImageResource(R.drawable.icon_logout);
-            userNameText.setText("未登录");
+    public void setTimetableHintTextInUiThread(final String text) {
+        if (timetableHintText != null) {
+            MainActivity.getInstance().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    timetableHintText.setText(text);
+                }
+            });
         }
+    }
+
+    public void setUserViews(final boolean isLogin) {
+        MainActivity.getInstance().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (isLogin) {
+                    userImage.setImageResource(R.drawable.icon_login);
+                    ofoMenuManager.setUserIcon(R.drawable.icon_login);
+                    userNameText.setText(Datas.getUserInfo().getDisplayName());
+                } else {
+                    userImage.setImageResource(R.drawable.icon_logout);
+                    ofoMenuManager.setUserIcon(R.drawable.icon_logout);
+                    userNameText.setText("未登录");
+                }
+            }
+        });
     }
 }

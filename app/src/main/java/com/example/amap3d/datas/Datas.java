@@ -15,23 +15,19 @@ import java.util.List;
  */
 
 public class Datas {
-    public static HashMap<String, String[]> busInformationMap = new HashMap<>();//校车信息
-    public static HashMap<String, Marker> busMarkerMap = new HashMap<>();//校车定位点
-    public static List<BusPositionGson> busPositionList = new ArrayList<>();//校车位置
-    public static HashMap<String, Marker> peopleMap = new HashMap<>();//人员位置
-    public static HashMap<String, String> peopleRemarkList = new HashMap<>();//人员信息
+    private static HashMap<String, String[]> busInformationMap = new HashMap<>();//校车信息
+    private static HashMap<String, Marker> busMarkerMap = new HashMap<>();//校车定位点
+    private static List<BusPositionGson> busPositionList = new ArrayList<>();//校车位置
+    private static HashMap<String, Marker> peopleMap = new HashMap<>();//人员位置
 
-    public static SmoothMoveMarker smoothMarker;
-    public static List<LatLng> latLngList = new ArrayList<>();
 
-    public static String currentInfoWindowRemark = "";//用户上传位置备注
+    private static String currentInfoWindowRemark = "";//用户上传位置备注
 
     public static void clear() {
         busInformationMap.clear();
         busMarkerMap.clear();
         busPositionList.clear();
         peopleMap.clear();
-        peopleRemarkList.clear();
     }
 
     public static void destroy() {
@@ -40,9 +36,44 @@ public class Datas {
         busMarkerMap = null;
         busPositionList = null;
         peopleMap = null;
-        peopleRemarkList = null;
         userInfo = null;
     }
 
-    public static UserInfo userInfo = new UserInfo();
+    private static UserInfo userInfo = new UserInfo();
+
+    public synchronized static HashMap<String, String[]> getBusInformationMap() {
+        return busInformationMap;
+    }
+
+    public synchronized static HashMap<String, Marker> getBusMarkerMap() {
+        return busMarkerMap;
+    }
+
+    public synchronized static List<BusPositionGson> getBusPositionList() {
+        return busPositionList;
+    }
+
+    public synchronized static void setBusPositionList(List<BusPositionGson> busPositionList) {
+        Datas.busPositionList = busPositionList;
+    }
+
+    public synchronized static HashMap<String, Marker> getPeopleMap() {
+        return peopleMap;
+    }
+
+    public synchronized static String getCurrentInfoWindowRemark() {
+        return currentInfoWindowRemark;
+    }
+
+    public synchronized static void setCurrentInfoWindowRemark(String currentInfoWindowRemark) {
+        Datas.currentInfoWindowRemark = currentInfoWindowRemark;
+    }
+
+    public synchronized static UserInfo getUserInfo() {
+        return userInfo;
+    }
+
+    public synchronized static void setUserInfo(UserInfo userInfo) {
+        Datas.userInfo = userInfo;
+    }
 }

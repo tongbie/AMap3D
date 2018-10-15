@@ -87,9 +87,9 @@
                 android:id="@+id/recycleView"
                 android:layout_width="match_parent"
                 android:layout_height="360dp"
+                android:background="#f4f4f4"
                 android:layout_gravity="bottom"
-                android:paddingLeft="10dp"
-                android:paddingRight="10dp"></android.support.v7.widget.RecyclerView>
+                android:paddingBottom="1dp"></android.support.v7.widget.RecyclerView>
         </FrameLayout>
 
     </com.example.amap3d.views.ScrollLayout>
