@@ -25,24 +25,25 @@ import okhttp3.Response;
 
 public class MQTTManager {
     private static MQTTManager mqttManager;
-    private MqttConnectOptions mqttOptions;
+    private MqttConnectOptions mqttConnectOptions;
     public MqttClient mqttClient;
     public static String deviceId;
 
     public boolean isShowMoving = true;
 
+    private static class MQTTManagerFactory{
+        public static MQTTManager instance=new MQTTManager();
+    }
+
     public static MQTTManager getInstance() {
-        if (mqttManager == null) {
-            mqttManager = new MQTTManager();
-        }
-        return mqttManager;
+        return MQTTManagerFactory.instance;
     }
 
     private MQTTManager() {
-        mqttOptions = new MqttConnectOptions();
-        mqttOptions.setCleanSession(true);
-        mqttOptions.setConnectionTimeout(10);//超时时间20s
-        mqttOptions.setKeepAliveInterval(120);//心跳时间，用以服务端判断客户端在线状态
+        mqttConnectOptions = new MqttConnectOptions();
+        mqttConnectOptions.setCleanSession(true);//服务端保留客户端连接记录
+        mqttConnectOptions.setConnectionTimeout(10);//超时时间20s
+        mqttConnectOptions.setKeepAliveInterval(120);//心跳时间，用以服务端判断客户端在线状态
 
         deviceId = "35" + Build.BOARD.length() % 10 + Build.BRAND.length() % 10 +
                 Build.CPU_ABI.length() % 10 + Build.DEVICE.length() % 10 +
@@ -70,11 +71,11 @@ public class MQTTManager {
                 String username = account.getUsername();
                 String password = account.getPassword();
                 //断线不支持重连，必须申请新的username
-                mqttOptions.setUserName(username);
-                mqttOptions.setPassword(password.toCharArray());
+                mqttConnectOptions.setUserName(username);
+                mqttConnectOptions.setPassword(password.toCharArray());
                 mqttClient = new MqttClient(Fields.URL_LINK_MQTT, deviceId, new MemoryPersistence());
                 mqttClient.setCallback(mqttCallback);
-                mqttClient.connect(mqttOptions);
+                mqttClient.connect(mqttConnectOptions);
                 subscribeTopic(Fields.MQTT_TOPIC_BUS_MOVE);
                 subscribeTopic(Fields.MQTT_TOPIC_UPLOAD_POSITION);
                 if (StorageManager.getSetting(Fields.SETTING_RECEIVE)) {
@@ -161,7 +162,7 @@ public class MQTTManager {
 
     public void destroy() {
         mqttClient = null;
-        mqttOptions = null;
+        mqttConnectOptions = null;
         disconnect();
     }
 }

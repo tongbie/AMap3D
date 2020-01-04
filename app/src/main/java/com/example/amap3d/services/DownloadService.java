@@ -1,5 +1,6 @@
 package com.example.amap3d.services;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -16,6 +17,7 @@ import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
+import android.util.Log;
 
 import com.example.amap3d.BuildConfig;
 import com.example.amap3d.MainActivity;
@@ -40,9 +42,11 @@ public class DownloadService extends Service {
     private int downloadNotificationId = 10;
     private String downloadNotificationTag = "tag";
     private NotificationCompat.Builder builder = null;
+    private static String URL_DOWNLOAD_APK = "";
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        URL_DOWNLOAD_APK = intent.getStringExtra("downloadUrl");
         initNotificationManager();
         requireWakeLock();
         new Thread(new Runnable() {
@@ -57,13 +61,14 @@ public class DownloadService extends Service {
         return START_NOT_STICKY;
     }
 
+    @SuppressLint("InvalidWakeLockTag")
     private void requireWakeLock() {
         if (null == wakeLock) {
             PowerManager powerManager = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
             assert powerManager != null;
             wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "PostLocationService");
             if (null != wakeLock) {
-                wakeLock.acquire(10*60*1000L);
+                wakeLock.acquire(10 * 60 * 1000L);
             }
         }
     }
@@ -82,7 +87,7 @@ public class DownloadService extends Service {
             intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);//避免重复打开activity
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
             builder.setSmallIcon(R.mipmap.ic_launcher);
-            builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.sign));
+            builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.icon));
             builder.setContentIntent(pendingIntent);
             builder.setContentTitle("校车查询（更新下载中）");
             builder.setOngoing(true);
@@ -95,7 +100,7 @@ public class DownloadService extends Service {
 
     private boolean isApkExist(long fileSize) {
         boolean isExist = false;
-        File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.downloadFileName);
+        File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.TITLE_DOWNLOAD_FILE);
         FileInputStream fileInputStream = null;
         try {
             fileInputStream = new FileInputStream(file);
@@ -130,7 +135,7 @@ public class DownloadService extends Service {
     private void showFailNotifacation(String text) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId);
         builder.setSmallIcon(R.mipmap.ic_launcher);
-        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.sign));
+        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.icon));
         builder.setContentTitle("下载失败");
         builder.setPriority(NotificationCompat.PRIORITY_HIGH);
         builder.setContentText(text);
@@ -143,68 +148,74 @@ public class DownloadService extends Service {
             destroyService();
             return;
         }
-        Request request = new Request.Builder()
-                .url(UpdateManager.downloadApkURL)
-                .build();
-        Utils.client.newCall(request).enqueue(new okhttp3.Callback() {
+        try {
+            Log.e("URL_DOWNLOAD_APK", "Url: " + URL_DOWNLOAD_APK);
+            Request request = new Request.Builder()
+                    .url(URL_DOWNLOAD_APK)
+                    .build();
+            Utils.client.newCall(request).enqueue(new okhttp3.Callback() {
 
-            @Override
-            public void onFailure(Call call, IOException e) {
-                call.cancel();
-                showFailNotifacation("网络异常，请检查网络设置");
-                destroyService();
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) {
-                InputStream inputStream = null;
-                FileOutputStream fileOutputStream = null;
-                try {
-                    inputStream = response.body().byteStream();
-                    long fileSize = response.body().contentLength();
-                    if (!isApkExist(fileSize) && inputStream != null) {
-                        File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.downloadFileName);
-                        fileOutputStream = new FileOutputStream(file);
-                        byte[] bytes = new byte[1024];
-                        int bytesNum;
-                        int allBytes = 0;
-                        int progress ;
-                        int progressListener = 0;
-                        while ((bytesNum = inputStream.read(bytes)) != -1) {
-                            fileOutputStream.write(bytes, 0, bytesNum);
-                            allBytes += bytesNum;
-                            progress = (int) (allBytes * 100 / fileSize);
-                            if (progress > progressListener) {
-                                notificationManager.notify(downloadNotificationTag, downloadNotificationId, setDownloadNotification(progress));
-                                progressListener = progress;
-                            }
-                        }
-                        notificationManager.notify(downloadNotificationTag, downloadNotificationId, setDownloadNotification(100));
-                        if (file.exists()) {
-                            installApk(file);
-                        } else {
-                            showFailNotifacation("升级包获取失败");
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    showFailNotifacation("连接超时，请检查网络设置");
-                } finally {
-                    try {
-                        if (inputStream != null) {
-                            inputStream.close();
-                        }
-                        if (fileOutputStream != null) {
-                            fileOutputStream.flush();
-                            fileOutputStream.close();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    call.cancel();
+                    showFailNotifacation("网络异常，请检查网络设置");
                     destroyService();
                 }
-            }
-        });
+
+                @Override
+                public void onResponse(Call call, Response response) {
+                    InputStream inputStream = null;
+                    FileOutputStream fileOutputStream = null;
+                    try {
+                        inputStream = response.body().byteStream();
+                        long fileSize = response.body().contentLength();
+                        if (!isApkExist(fileSize) && inputStream != null) {
+                            File file = new File(Environment.getExternalStorageDirectory(), UpdateManager.TITLE_DOWNLOAD_FILE);
+                            fileOutputStream = new FileOutputStream(file);
+                            byte[] bytes = new byte[1024];
+                            int bytesNum;
+                            int allBytes = 0;
+                            int progress;
+                            int progressListener = 0;
+                            while ((bytesNum = inputStream.read(bytes)) != -1) {
+                                fileOutputStream.write(bytes, 0, bytesNum);
+                                allBytes += bytesNum;
+                                progress = (int) (allBytes * 100 / fileSize);
+                                if (progress > progressListener) {
+                                    notificationManager.notify(downloadNotificationTag, downloadNotificationId, setDownloadNotification(progress));
+                                    progressListener = progress;
+                                }
+                            }
+                            notificationManager.notify(downloadNotificationTag, downloadNotificationId, setDownloadNotification(100));
+                            if (file.exists()) {
+                                installApk(file);
+                            } else {
+                                showFailNotifacation("升级包获取失败");
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        showFailNotifacation("连接超时，请检查网络设置");
+                    } finally {
+                        try {
+                            if (inputStream != null) {
+                                inputStream.close();
+                            }
+                            if (fileOutputStream != null) {
+                                fileOutputStream.flush();
+                                fileOutputStream.close();
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        destroyService();
+                    }
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            showFailNotifacation("升级包获取失败");
+        }
     }
 
     private void destroyService() {

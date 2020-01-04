@@ -38,11 +38,12 @@ public class PeopleManager {
     private static PeopleManager peopleManager;
     private OkHttpClient loginCheckClient;
 
+    private static class PeopleManagerFactory{
+        public static PeopleManager instance=new PeopleManager();
+    }
+
     public static PeopleManager getInstance() {
-        if (peopleManager == null) {
-            peopleManager = new PeopleManager();
-        }
-        return peopleManager;
+        return PeopleManagerFactory.instance;
     }
 
     /*启动时获取位置列表*/
@@ -66,7 +67,7 @@ public class PeopleManager {
                 Marker marker = AMapManager.aMap.addMarker(new MarkerOptions()
                         .position(latLng)
                         .title("ID" + peopleGson.getDeviceId()));
-                marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
+                marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_people));
                 Datas.getPeopleMap().put(peopleGson.getDeviceId(), marker);
             }
         }
@@ -143,6 +144,7 @@ public class PeopleManager {
                 ViewManager.getInstance().setUserViews(true);
             }
         } catch (Exception e) {
+//            Utils.uiToast("用户信息获取失败");
             e.printStackTrace();
         }
     }
@@ -243,7 +245,7 @@ public class PeopleManager {
                     .position(latLng)
                     .snippet(Datas.getCurrentInfoWindowRemark())
                     .title("ID" + deviceId));
-            marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
+            marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_people));
             if (isShowingInfoWindow) {
                 marker.showInfoWindow();
             }
@@ -279,7 +281,7 @@ public class PeopleManager {
                                 .position(latLng)
                                 .snippet(finalRemark)
                                 .title("ID" + deviceId));
-                        newMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.people));
+                        newMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_people));
                         Datas.getPeopleMap().put(deviceId, newMarker);
                         newMarker.showInfoWindow();
                     }

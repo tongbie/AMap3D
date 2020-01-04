@@ -1,8 +1,7 @@
 package com.example.amap3d.datas;
 
-import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
-import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
+import com.example.amap3d.gsons.AdressGson;
 import com.example.amap3d.gsons.BusPositionGson;
 import com.example.amap3d.gsons.UserInfo;
 
@@ -15,28 +14,31 @@ import java.util.List;
  */
 
 public class Datas {
-    private static HashMap<String, String[]> busInformationMap = new HashMap<>();//校车信息
-    private static HashMap<String, Marker> busMarkerMap = new HashMap<>();//校车定位点
-    private static List<BusPositionGson> busPositionList = new ArrayList<>();//校车位置
+    private static HashMap<String, String[]> busInformationMap = new HashMap<>(16);//校车信息
+    private static HashMap<String, Marker> busMarkerMap = new HashMap<>(16);//校车定位点
     private static HashMap<String, Marker> peopleMap = new HashMap<>();//人员位置
 
+    private static List<AdressGson> adressList = new ArrayList<>(4);//地址
+    private static List<BusPositionGson> busPositionList = new ArrayList<>();//校车位置
 
     private static String currentInfoWindowRemark = "";//用户上传位置备注
+    private static int currentSelectorId = 0;
 
     public static void clear() {
         busInformationMap.clear();
         busMarkerMap.clear();
         busPositionList.clear();
+        adressList.clear();
         peopleMap.clear();
     }
 
     public static void destroy() {
         clear();
-        busInformationMap = null;
-        busMarkerMap = null;
-        busPositionList = null;
-        peopleMap = null;
-        userInfo = null;
+//        busInformationMap = null;
+//        busMarkerMap = null;
+//        busPositionList = null;
+//        peopleMap = null;
+//        userInfo = null;
     }
 
     private static UserInfo userInfo = new UserInfo();
@@ -75,5 +77,32 @@ public class Datas {
 
     public synchronized static void setUserInfo(UserInfo userInfo) {
         Datas.userInfo = userInfo;
+    }
+
+    public synchronized static void setAdressList(List<AdressGson> var) {
+        adressList = var;
+    }
+
+    public synchronized static List<AdressGson> getAdressList() {
+        return adressList;
+    }
+
+    public synchronized static String getAdress(int i) {
+        String adress = "";
+        for (AdressGson a : adressList) {
+            if (i == a.getId()) {
+                adress = a.getName();
+                break;
+            }
+        }
+        return adress;
+    }
+
+    public synchronized static void setCurrentSelectorId(int id) {
+        currentSelectorId = id;
+    }
+
+    public synchronized static int getCurrentSelectorId() {
+        return currentSelectorId;
     }
 }

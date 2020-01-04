@@ -10,6 +10,8 @@ public class BusDataGson {
     private String bus_arriveSite;
     private String GPSDeviceIMEI;
 
+    private String containsString = "司机：";
+
     public String getBus_lineName() {
         if (bus_lineName == null) {
             bus_lineName = "";
@@ -20,6 +22,13 @@ public class BusDataGson {
     public String getBus_departureSite() {
         if (bus_departureSite == null) {
             bus_departureSite = "";
+        } else {
+            if (bus_departureSite.contains(containsString)) {
+                int index = bus_departureSite.indexOf(containsString) + 3;
+                if (bus_departureSite.length() > index) {
+                    bus_departureSite = containsString + bus_departureSite.substring(index, index + 1) + "师傅";
+                }
+            }
         }
         return bus_departureSite;
     }

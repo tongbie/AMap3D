@@ -3,10 +3,14 @@ package com.example.amap3d;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.example.amap3d.datas.Datas;
@@ -27,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("StaticFieldLeak")
     private static Activity activity;
-    private ExecutorService refreshExecutorService;
+    private ExecutorService taskExecutorService;
 
     public static Activity getInstance() {
         return activity;
@@ -37,31 +41,32 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         activity = this;
-        Utils.hideTitleBar(this);
+//        Utils.hideTitleBar(this);
         setContentView(R.layout.activity_main);
         initView(savedInstanceState);
         if (isNetworkAvailable()) {
             requireAllData();
             update(null);
         }
-
     }
 
     private void initView(Bundle savedInstanceState) {
-        refreshExecutorService = Executors.newFixedThreadPool(1);
+        taskExecutorService = Executors.newCachedThreadPool();
         ViewManager.getInstance().initViewInNewThread();
         AMapManager.getInstance().initMapView(savedInstanceState);
         if (AMapManager.aMap == null) {
             AMapManager.aMap = AMapManager.mapView.getMap();
         }
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                AMapManager.getInstance().setAMap();
-                AMapManager.getInstance().setLocationStyle();
-            }
-        }).start();
+        taskExecutorService.execute(setAMapRunnable);
     }
+
+    private Runnable setAMapRunnable=new Runnable() {
+        @Override
+        public void run() {
+            AMapManager.getInstance().setAMap();
+            AMapManager.getInstance().setLocationStyle();
+        }
+    };
 
     public void update(final String text) {
         if (isNetworkAvailable()) {
@@ -87,27 +92,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public synchronized void requireAllData() {
-        refreshExecutorService.submit(requireAllDataRunnable);
+//        int threadCount = ((ThreadPoolExecutor) taskExecutorService).getActiveCount();
+        taskExecutorService.execute(requireMainDataRunnable);
+        taskExecutorService.execute(requireOtherDataRunnable);
     }
 
-    private Runnable requireAllDataRunnable = new Runnable() {
+    private Runnable requireMainDataRunnable = new Runnable() {
         @Override
         public void run() {
             try {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            ViewManager.getInstance().setTimetableHintTextInUiThread("数据加载中...");
-                            PeopleManager.getInstance().requireAllPosition();
-                            PeopleManager.getInstance().requireUserInfo();
-                            BusManager.getInstance().requireBusTimetable();
-                        } catch (Exception e) {
-                            Utils.uiToast("数据获取失败");
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
                 MQTTManager.getInstance().isShowMoving = true;
                 BusManager.getInstance().requireBusInformation();
                 Datas.setBusPositionList(BusManager.getInstance().requireBusPosition());
@@ -115,6 +108,22 @@ public class MainActivity extends AppCompatActivity {
                 MQTTManager.getInstance().linkMQTT(MQTTManager.getInstance().mqttCallback);
                 ViewManager.getInstance().refreshButton.setRefreshing(false);
                 ViewManager.getInstance().isRefreshing = false;
+            } catch (Exception e) {
+                Utils.uiToast("数据获取失败");
+                e.printStackTrace();
+            }
+        }
+    };
+
+    private Runnable requireOtherDataRunnable = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                ViewManager.getInstance().setTimetableHintTextInUiThread("数据加载中...");
+                PeopleManager.getInstance().requireAllPosition();
+                PeopleManager.getInstance().requireUserInfo();
+                BusManager.getInstance().requireAddressAndTodayTimetable();
+                BusManager.getInstance().requireAllBusTimetable();
             } catch (Exception e) {
                 Utils.uiToast("数据获取失败");
                 e.printStackTrace();
@@ -168,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
         MQTTManager.getInstance().destroy();
         Datas.destroy();
         activity = null;
+        taskExecutorService.shutdown();
         super.onDestroy();
         System.exit(0);
     }
@@ -195,7 +205,6 @@ public class MainActivity extends AppCompatActivity {
             }
             return true;
         }
-
         return super.onKeyDown(keyCode, event);
     }
 }

@@ -19,53 +19,40 @@ import com.example.amap3d.utils.Utils;
  * Created by BieTong on 2018/3/19.
  */
 
-public class RefreshButton extends SelfButton {
-    private boolean isRefreshing = false;
+public class AMapButton extends SelfButton {
 
     private Bitmap bitmap;
     private Matrix matrix = new Matrix();
 
-    public RefreshButton(Context context) {
+    public AMapButton(Context context) {
         super(context);
         init();
     }
 
-    public RefreshButton(Context context, @Nullable AttributeSet attrs) {
+    public AMapButton(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
-    public RefreshButton(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public AMapButton(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
 
     private void init() {
-
-    }
-
-    public synchronized void setRefreshing(boolean isRefreshing) {
-        this.isRefreshing = isRefreshing;
-        if (isRefreshing) {
-            invalidate();
-        }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         canvas.drawBitmap(bitmap, matrix, paint);
-        if (isRefreshing) {
-            matrix.postRotate(3, buttonWidth / 2, buttonWidth / 2);
-            invalidate();
-        }
     }
 
     @SuppressLint("DrawAllocation")
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.icon_refresh);
+        bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.icon_move_map);
         float scale = ((float) buttonWidth) / bitmap.getWidth();
         matrix.setTranslate(0, 0);
         matrix.postScale(scale, scale);

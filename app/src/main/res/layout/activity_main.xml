@@ -18,12 +18,28 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
+        <com.example.amap3d.views.Timetable.NextBusView
+            android:id="@+id/timetableLayout"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:layout_margin="8dp"></com.example.amap3d.views.Timetable.NextBusView>
+
         <com.example.amap3d.views.RefreshButton
             android:id="@+id/refreshButton"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:layout_gravity="right|top"
+            android:layout_marginRight="8dp"
             android:layout_marginLeft="8dp"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="60dp" />
+
+        <com.example.amap3d.views.AMapButton
+            android:id="@+id/aMapButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="right|top"
+            android:layout_marginRight="8dp"
+            android:layout_marginTop="107dp" />
     </FrameLayout>
 
     <com.example.amap3d.views.ScrollLayout
@@ -38,6 +54,7 @@
             android:layout_width="match_parent"
             android:layout_height="430dp"
             android:background="#ffffff"
+            android:elevation="4dp"
             android:orientation="vertical">
 
             <RelativeLayout

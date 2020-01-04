@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 
 import com.example.amap3d.MainActivity;
 import com.example.amap3d.gsons.ApkVersionGson;
@@ -24,10 +25,10 @@ import okhttp3.Response;
 public class UpdateManager {
     private static UpdateManager updateManager;
     private static String updateDescription;
-    private static final String versionCodeURL = "http://bus.mysdnu.cn/android/update/alpha";
+    private static final String URL_VERSION_CODE = "http://bus.mysdnu.cn/android/update/alpha";
 
-    public static String downloadApkURL = "http://bus.mysdnu.cn/android/latest/alpha";
-    public static final String downloadFileName = "SchoolBusQuery.apk";
+    public static String URL_APK_DOWNLOAD = "";
+    public static final String TITLE_DOWNLOAD_FILE = "SchoolBusQuery.apk";
 
     public static final int UPDATE_NOT_NEED = 0;
     private static final int UPDATA_CLIENT = 1;
@@ -39,17 +40,18 @@ public class UpdateManager {
 
     }
 
+    private static class UpdateManagerFactory{
+        public static UpdateManager instance=new UpdateManager();
+    }
+
     public static UpdateManager getInstance() {
-        if (updateManager == null) {
-            updateManager = new UpdateManager();
-        }
-        return updateManager;
+        return UpdateManagerFactory.instance;
     }
 
     public static int isNeedUpdate(final Context context) {
         final int[] versionState = {0};
         Request request = new Request.Builder()
-                .url(versionCodeURL)
+                .url(URL_VERSION_CODE)
                 .build();
         Response response;
         try {
@@ -74,12 +76,10 @@ public class UpdateManager {
                 //TODO:updateType
                 if (versionCode < minVersionCode /*|| updateType.equals("updateType")*/) {
                     versionState[0] = UPDATE_FORCE;
-                    updateDescription = ("更新时间:" + apkVersionGson.getUpdateTime()).equals("") ? "暂无" : (apkVersionGson.getUpdateTime()
-                            + "\n更新日志：\n" + apkVersionGson.getDescription()).equals("") ? "暂无" : apkVersionGson.getDescription();
+                    setUpdateDialog(apkVersionGson);
                 } else if (versionCode < packageVersionCode) {
                     versionState[0] = UPDATA_CLIENT;
-                    updateDescription = ("更新时间:" + apkVersionGson.getUpdateTime()).equals("") ? "暂无" : (apkVersionGson.getUpdateTime()
-                            + "\n更新日志：\n" + apkVersionGson.getDescription()).equals("") ? "暂无" : apkVersionGson.getDescription();
+                    setUpdateDialog(apkVersionGson);
                 } else {
                     versionState[0] = UPDATE_NOT_NEED;
                 }
@@ -88,6 +88,14 @@ public class UpdateManager {
             e.printStackTrace();
         }
         return versionState[0];
+    }
+
+    private static void setUpdateDialog(ApkVersionGson apkVersionGson) {
+        updateDescription = (
+                "更新时间:" + apkVersionGson.getUpdateTime()).equals("") ? "暂无" : (apkVersionGson.getUpdateTime() +
+                "\n更新日志：\n" + apkVersionGson.getDescription()).equals("") ? "暂无" : apkVersionGson.getDescription() +
+                "\n版本号：" + apkVersionGson.getPackageVersionName();
+        URL_APK_DOWNLOAD = apkVersionGson.getDownloadUrl();
     }
 
     public void dealWithUpdateState(int versionCode) {
@@ -130,7 +138,7 @@ public class UpdateManager {
         builer.setNegativeButton("升级", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                downloadApkWithService();
+                downloadApkByService();
             }
         });
         MainActivity.getInstance().runOnUiThread(new Runnable() {
@@ -160,12 +168,13 @@ public class UpdateManager {
         return isWork;
     }
 
-    private void downloadApkWithService() {
+    private void downloadApkByService() {
         Utils.uiToast("开始下载");
         MainActivity.getInstance().runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 Intent intent = new Intent(MainActivity.getInstance(), DownloadService.class);
+                intent.putExtra("downloadUrl", URL_APK_DOWNLOAD);
                 MainActivity.getInstance().startService(intent);
             }
         });

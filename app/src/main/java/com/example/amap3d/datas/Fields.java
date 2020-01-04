@@ -14,7 +14,9 @@ public class Fields {
 
     public static final String URL_APPLY_FOR_MQTT = "http://bus.mysdnu.cn/bus/mqtt";
     public static final String URL_LINK_MQTT = "tcp://bus.mysdnu.cn:1880";
-    public static final String URL_BUS_TIMETABLE = "http://bus.mysdnu.cn/bus/schedule";
+    public static final String URL_ALL_BUS_TIMETABLE = "http://bus.mysdnu.cn/bus/schedule";
+    public static final String URL_TODAY_BUS_TIMETABLE = "http://bus.mysdnu.cn/bus/today";
     public static final String URL_BUS_INFORMATION = "http://bus.mysdnu.cn/android/bus";
     public static final String URL_BUS_POSITION = "http://bus.mysdnu.cn/android/bus/location";
+    public static final String URL_ADRESS = "http://bus.mysdnu.cn/address";
 }

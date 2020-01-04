@@ -9,10 +9,12 @@ import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
 import com.example.amap3d.R;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.datas.Fields;
+import com.example.amap3d.gsons.AdressGson;
 import com.example.amap3d.gsons.BusDataGson;
 import com.example.amap3d.gsons.BusMoveGson;
 import com.example.amap3d.gsons.BusPositionGson;
 import com.example.amap3d.gsons.BusTimetableGson;
+import com.example.amap3d.gsons.TodayTimetableGson;
 import com.example.amap3d.utils.Utils;
 import com.google.gson.reflect.TypeToken;
 
@@ -33,16 +35,16 @@ import okhttp3.Response;
  */
 
 public class BusManager {
-    private static BusManager busManager;
 
     private BusManager() {
     }
 
+    private static class BusManagerFactory {
+        public static BusManager instance = new BusManager();
+    }
+
     public static BusManager getInstance() {
-        if (busManager == null) {
-            busManager = new BusManager();
-        }
-        return busManager;
+        return BusManagerFactory.instance;
     }
 
     /* 获取校车信息 */
@@ -65,10 +67,30 @@ public class BusManager {
         }
     }
 
-    public void requireBusTimetable() throws Exception {
+    public void requireAddressAndTodayTimetable() {
         try {
             Request request = new Request.Builder()
-                    .url(Fields.URL_BUS_TIMETABLE)
+                    .url(Fields.URL_ADRESS)
+                    .build();
+            Response response = Utils.client.newCall(request).execute();
+            String body = response.body().string();
+            String code = String.valueOf(response.code());
+            if (code.charAt(0) == '2') {
+                List<AdressGson> adressGsonList = Utils.gson.fromJson(body, new TypeToken<List<AdressGson>>() {
+                }.getType());
+                Datas.setAdressList(adressGsonList);
+                requireTodayBusTimetable();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e("ERROR: ", "BusManager.requireAddressAndTodayTimetable: " + e.getMessage());
+        }
+    }
+
+    public void requireAllBusTimetable() {
+        try {
+            Request request = new Request.Builder()
+                    .url(Fields.URL_ALL_BUS_TIMETABLE)
                     .build();
             Response response = Utils.client.newCall(request).execute();
             String body = response.body().string();
@@ -93,22 +115,31 @@ public class BusManager {
             ViewManager.getInstance().setBusTimetableInUiThread(timetableList);
         } catch (Exception e) {
             e.printStackTrace();
+            Log.e("ERROR: ", "BusManager.requireAllBusTimetable: " + e.getMessage());
+        }
+    }
+
+    public void requireTodayBusTimetable() {
+        try {
+            Request request = new Request.Builder()
+                    .url(Fields.URL_TODAY_BUS_TIMETABLE)
+                    .build();
+            Response response = Utils.client.newCall(request).execute();
+            String body = response.body().string();
+            String code = String.valueOf(response.code());
+            if (code.charAt(0) == '2') {
+                List<TodayTimetableGson> todayTimetableGsonList = Utils.gson.fromJson(/*hardCodeData*/body, new TypeToken<List<TodayTimetableGson>>() {
+                }.getType());
+                ViewManager.getInstance().nextBusView.setData(todayTimetableGsonList);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e("ERROR: ", "BusManager.requireTodayBusTimetable: " + e.getMessage());
         }
     }
 
     public void moveBus(MqttMessage message) {
         try {
-//            List<BusMoveGson> busMoveGsons = Utils.gson.fromJson(message.toString(), new TypeToken<List<BusMoveGson>>() {
-//            }.getType());
-//            for (BusMoveGson busMoveGson : busMoveGsons) {
-//                String key = busMoveGson.getGPSDeviceIMEI();
-//                LatLng latLng = Datas.busMarkerMap.get(key).getPosition();
-//                double lat = latLng.latitude;
-//                double lng = latLng.longitude;
-//                Datas.busMarkerMap.get(key).setPosition(new LatLng(busMoveGson.getLat(), busMoveGson.getLng()));
-//                Datas.busMarkerMap.get(key).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
-//                AMapManager.getInstance().moveMarker(new LatLng[]{new LatLng(lat, lng), Datas.busMarkerMap.get(key).getPosition()}, key);
-//            }
             List<BusMoveGson> busMoveGsons = Utils.gson.fromJson(message.toString(), new TypeToken<List<BusMoveGson>>() {
             }.getType());
             for (BusMoveGson busMoveGson : busMoveGsons) {
@@ -116,7 +147,7 @@ public class BusManager {
                 final LatLng newLatLng = new LatLng(busMoveGson.getLat(), busMoveGson.getLng());
 
                 final SmoothMoveMarker smoothMarker = new SmoothMoveMarker(AMapManager.aMap);
-                smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.bus_move));
+                smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.icon_bus_moving));
                 smoothMarker.setPoints(Arrays.asList(movingMarker.getPosition(), newLatLng));
                 smoothMarker.setTotalDuration(3);
                 movingMarker.setVisible(false);
@@ -128,7 +159,7 @@ public class BusManager {
                             smoothMarker.stopMove();
                             smoothMarker.removeMarker();
                             movingMarker.setPosition(newLatLng);
-                            movingMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
+                            movingMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_bus_red));
                             movingMarker.setVisible(true);
                         }
                     }
@@ -136,6 +167,7 @@ public class BusManager {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            Log.e("ERROR: ", "BusManager.moveBus: " + e.getMessage());
         }
     }
 
@@ -151,7 +183,7 @@ public class BusManager {
                 LatLng[] movePath = new LatLng[]{oldLatLng, newLatLng};
 
                 final SmoothMoveMarker smoothMarker = new SmoothMoveMarker(AMapManager.aMap);
-                smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.bus_move));
+                smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.icon_bus_moving));
                 smoothMarker.setPoints(Arrays.asList(movePath));
                 smoothMarker.setTotalDuration(1);
                 movingMarker.setVisible(false);
@@ -164,7 +196,7 @@ public class BusManager {
                             smoothMarker.stopMove();
                             smoothMarker.removeMarker();
                             movingMarker.setPosition(newLatLng);
-                            movingMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
+                            movingMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_bus_red));
                             movingMarker.setVisible(true);
                         }
                     }
@@ -172,54 +204,9 @@ public class BusManager {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            Log.e("ERROR: ", "BusManager.moveTestBus: " + e.getMessage());
         }
     }
-
-    /*SmoothMoveMarker smoothMarker;
-    List<LatLng> latLngList = new ArrayList<>();
-
-    public void moveTestBus(MqttMessage message) {
-        try {
-            List<BusMoveGson> busMoveGsons = Utils.gson.fromJson(message.toString(), new TypeToken<List<BusMoveGson>>() {
-            }.getType());
-            for (BusMoveGson busMoveGson : busMoveGsons) {
-                final String key = busMoveGson.getGPSDeviceIMEI();
-                LatLng latLng = Datas.busMarkerMap.get(key).getPosition();
-                double lat = latLng.latitude;
-                double lng = latLng.longitude;
-                Datas.busMarkerMap.get(key).setPosition(new LatLng(busMoveGson.getLat(), busMoveGson.getLng()));
-                Datas.busMarkerMap.get(key).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus2));
-
-                latLngList.add(new LatLng(lat, lng));
-
-                if (smoothMarker == null) {
-                    smoothMarker = new SmoothMoveMarker(AMapManager.aMap);
-                    smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.bus_move));
-                    smoothMarker.setTotalDuration(1);
-                    smoothMarker.setMoveListener(new SmoothMoveMarker.MoveListener() {
-                        @Override
-                        public void move(double distance) {
-                            Log.e("INDEX", smoothMarker.getIndex() + "");
-                            if (smoothMarker.getIndex() > 0) {
-//                                Datas.latLngList.remove(0);
-//                                Datas.smoothMarker.stopMove();
-                            }
-                            if (distance == 0) {
-//                                Datas.smoothMarker.setVisible(false);
-//                                Datas.busMarkerMap.get(key).setVisible(true);
-//                                isNeedSetPoints = true;
-                            }
-                        }
-                    });
-                }
-                smoothMarker.setPoints(latLngList);
-                smoothMarker.startSmoothMove();
-                Datas.busMarkerMap.get(key).setVisible(false);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }*/
 
     /* 获取校车位置 */
     public List<BusPositionGson> requireBusPosition() throws Exception {

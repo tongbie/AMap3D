@@ -33,7 +33,6 @@ import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.MyLocationStyle;
-import com.amap.api.maps.model.VisibleRegion;
 import com.amap.api.maps.utils.overlay.SmoothMoveMarker;
 import com.example.amap3d.datas.Datas;
 import com.example.amap3d.MainActivity;
@@ -42,7 +41,6 @@ import com.example.amap3d.gsons.BusPositionGson;
 import com.example.amap3d.R;
 import com.example.amap3d.utils.Utils;
 import com.example.amap3d.views.MapViewContainerView;
-import com.example.amap3d.views.ScrollLayout;
 
 import java.util.Arrays;
 
@@ -56,13 +54,20 @@ public class AMapManager/* implements ScrollLayout.OnScrollLayoutStateChangeList
     public static MapView mapView;
 
     private AMapManager() {
+
+    }
+
+    private static class AMapManagerFactory {
+        private static AMapManager instance = new AMapManager();
     }
 
     public static AMapManager getInstance() {
-        if (aMapManager == null) {
-            aMapManager = new AMapManager();
-        }
-        return aMapManager;
+        return AMapManagerFactory.instance;
+    }
+
+    public void setUi(){
+        UiSettings uiSettings=aMap.getUiSettings();
+//        uiSettings.set
     }
 
     public void initMapView(Bundle savedInstanceState) {
@@ -70,7 +75,7 @@ public class AMapManager/* implements ScrollLayout.OnScrollLayoutStateChangeList
         MapViewContainerView mapViewContainerView = MainActivity.getInstance().findViewById(R.id.mapViewContainerView);
         mapViewContainerView.addView(AMapManager.mapView);
         AMapManager.mapView.onCreate(savedInstanceState);
-        location();
+        startLocation();
     }
 
     /* 设置定位模式 */
@@ -81,10 +86,11 @@ public class AMapManager/* implements ScrollLayout.OnScrollLayoutStateChangeList
         myLocationStyle.showMyLocation(true);
         myLocationStyle.radiusFillColor(Color.parseColor("#00000000"));//定位精度圈透明
         myLocationStyle.strokeColor(Color.parseColor("#00000000"));//定位精度圈边缘透明
-        myLocationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.ilocation));
+        myLocationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_mylocation));
         aMap.setMyLocationStyle(myLocationStyle);
         aMap.getUiSettings().setMyLocationButtonEnabled(true);
         aMap.setMyLocationEnabled(true);
+        aMap.getUiSettings().setMyLocationButtonEnabled(false);
     }
 
     /* 校车信息弹窗 */
@@ -199,7 +205,7 @@ public class AMapManager/* implements ScrollLayout.OnScrollLayoutStateChangeList
                     .position(latLng)
                     .title(Datas.getBusInformationMap().get(key)[0])
                     .snippet(Datas.getBusInformationMap().get(key)[1]));
-            marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.bus1));
+            marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_bus_blue));
             Datas.getBusMarkerMap().put(key, marker);
         }
     }
@@ -208,7 +214,7 @@ public class AMapManager/* implements ScrollLayout.OnScrollLayoutStateChangeList
     public void moveMarker(LatLng[] latLngs, final String key) {
         //TODO：移动点是一个新的对象，不能添加信息
         final SmoothMoveMarker smoothMarker = new SmoothMoveMarker(aMap);
-        smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.bus_move));
+        smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.icon_bus_moving));
         smoothMarker.setPoints(Arrays.asList(latLngs));
         smoothMarker.setTotalDuration(3);
         smoothMarker.startSmoothMove();
@@ -258,10 +264,10 @@ public class AMapManager/* implements ScrollLayout.OnScrollLayoutStateChangeList
                     aMap.moveCamera(CameraUpdateFactory.changeLatLng(new LatLng(location.getLatitude(), location.getLongitude())));
                     isFirstMove = false;
                 }
+                lat = location.getLatitude();
+                lng = location.getLongitude();
                 if (onPositionChangedListener != null) {
                     if (location.getLatitude() != lat && location.getLongitude() != lng) {
-                        lat = location.getLatitude();
-                        lng = location.getLongitude();
                         onPositionChangedListener.onPositionChanged(lng, lat);
                         lastUploadTime = System.currentTimeMillis();
                     }
@@ -297,7 +303,7 @@ public class AMapManager/* implements ScrollLayout.OnScrollLayoutStateChangeList
         tiemHandler.sendEmptyMessageDelayed(0, 8000);
     }
 
-    private void location() {
+    private void startLocation() {
         AMapLocationClient aMapLocationClient;
         AMapLocationClientOption aMapLocationClientOption;
         aMapLocationClient = new AMapLocationClient(MainActivity.getInstance());
@@ -325,6 +331,12 @@ public class AMapManager/* implements ScrollLayout.OnScrollLayoutStateChangeList
         if (!userPosition.equals(aMapLocation.getProvince() + aMapLocation.getCity() + aMapLocation.getDistrict() + aMapLocation.getStreet())) {
             userPosition = aMapLocation.getProvince() + aMapLocation.getCity() + aMapLocation.getDistrict() + aMapLocation.getStreet();
             ViewManager.getInstance().setUserPosition(userPosition);
+        }
+    }
+
+    public void backToMyPosition(){
+        if(lat!=0){
+            aMap.moveCamera(CameraUpdateFactory.changeLatLng(new LatLng(lat,lng)));
         }
     }
 

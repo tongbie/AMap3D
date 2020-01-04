@@ -12,9 +12,18 @@ public class ApkVersionGson {
     private String description;
     private String minVersionCode;
     private String type;
+    private String downloadUrl;
+
+    public void setDownloadUrl(String downloadUrl) {
+        this.downloadUrl = downloadUrl;
+    }
+
+    public String getDownloadUrl() {
+        return downloadUrl == null ? "" : downloadUrl;
+    }
 
     public String getId() {
-        return id==null?"":id;
+        return id == null ? "" : id;
     }
 
     public void setId(String id) {
@@ -22,7 +31,7 @@ public class ApkVersionGson {
     }
 
     public String getUpdateTime() {
-        return updateTime==null?"":updateTime;
+        return updateTime == null ? "" : updateTime;
     }
 
     public void setUpdateTime(String updateTime) {
@@ -30,7 +39,7 @@ public class ApkVersionGson {
     }
 
     public String getPackageVersionName() {
-        return packageVersionName==null?"":packageVersionName;
+        return packageVersionName == null ? "" : packageVersionName;
     }
 
     public void setPackageVersionName(String packageVersionName) {
@@ -38,7 +47,7 @@ public class ApkVersionGson {
     }
 
     public int getPackageVersionCode() {
-        if(packageVersionCode==null){
+        if (packageVersionCode == null) {
             return -404;
         }
         return Integer.parseInt(packageVersionCode);
@@ -49,7 +58,7 @@ public class ApkVersionGson {
     }
 
     public String getDescription() {
-        return description==null?"":description;
+        return description == null ? "" : description;
     }
 
     public void setDescription(String description) {
@@ -57,7 +66,7 @@ public class ApkVersionGson {
     }
 
     public int getMinVersionCode() {
-        if(minVersionCode==null){
+        if (minVersionCode == null) {
             return -404;
         }
         return Integer.parseInt(minVersionCode);
@@ -68,7 +77,7 @@ public class ApkVersionGson {
     }
 
     public String getType() {
-        return type==null?"":type;
+        return type == null ? "" : type;
     }
 
     public void setType(String type) {

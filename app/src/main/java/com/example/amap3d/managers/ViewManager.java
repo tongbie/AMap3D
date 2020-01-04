@@ -9,6 +9,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -33,6 +34,7 @@ import com.example.amap3d.MainActivity;
 import com.example.amap3d.views.ScrollLayout;
 import com.example.amap3d.views.RefreshButton;
 import com.example.amap3d.views.TimetableAdapter;
+import com.example.amap3d.views.Timetable.NextBusView;
 import com.example.amap3d.views.ofoMenuView.MenuBrawable;
 import com.example.amap3d.views.ofoMenuView.OfoContentLayout;
 import com.example.amap3d.views.ofoMenuView.OfoMenuManager;
@@ -48,8 +50,9 @@ import java.util.Map;
 
 public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollLayoutStateChangeListener {
     @SuppressLint("StaticFieldLeak")
-    private static ViewManager viewManager;
+    private long lastRefreshStamp = 0;
 
+    public NextBusView nextBusView;
     public RefreshButton refreshButton;
     public ScrollLayout scrollLayout;
     private TextView timetableHintText;
@@ -64,23 +67,24 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
     private ViewManager() {
     }
 
-    public static ViewManager getInstance() {
-        if (viewManager == null) {
-            viewManager = new ViewManager();
-        }
-        return viewManager;
+    private static class ViewManagerFactory {
+        public static ViewManager instance = new ViewManager();
     }
 
-//    Handler createViewHandler = null;
+    public static ViewManager getInstance() {
+        return ViewManagerFactory.instance;
+    }
 
     public void initViewInNewThread() {
         new Thread(new Runnable() {
             @Override
             public void run() {
-//                createViewHandler = new Handler();
                 Activity mainActivity = MainActivity.getInstance();
+                nextBusView = mainActivity.findViewById(R.id.timetableLayout);
+                nextBusView.setOnClickListener(ViewManager.this);
                 refreshButton = mainActivity.findViewById(R.id.refreshButton);
                 refreshButton.setOnClickListener(ViewManager.this);
+                mainActivity.findViewById(R.id.aMapButton).setOnClickListener(ViewManager.this);
                 timetableImage = mainActivity.findViewById(R.id.timetableImage);
                 timetableHintText = mainActivity.findViewById(R.id.timetableHintText);
                 scrollLayout = mainActivity.findViewById(R.id.othersScrollLayout);
@@ -186,7 +190,10 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         switch (view.getId()) {
             case R.id.refreshButton:
                 if (((MainActivity) MainActivity.getInstance()).isNetworkAvailable()) {
-                    refresh();
+                    if (System.currentTimeMillis() - lastRefreshStamp > 1000) {
+                        refresh();
+                    }
+                    lastRefreshStamp = System.currentTimeMillis();
                 }
                 break;
             case R.id.uploadPositionLayout:
@@ -210,6 +217,17 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                     timetableImage.setImageResource(R.drawable.icon_map);
                 }
                 break;
+            case R.id.aMapButton:
+                AMapManager.getInstance().backToMyPosition();
+                break;
+            case R.id.timetableLayout:
+                if(nextBusView.isClickAble()) {
+                    if (nextBusView.isShowing()) {
+                        nextBusView.showNextBus();
+                    } else {
+                        nextBusView.showAllBus(Datas.getCurrentSelectorId());
+                    }
+                }
             default:
         }
     }
@@ -242,7 +260,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         timetableHintText.setText("校车时刻");
     }
 
-    public void setBusTimetableInUiThread(final List<Map<String, String>> timetableList) {
+    void setBusTimetableInUiThread(final List<Map<String, String>> timetableList) {
         final LinearLayoutManager linearLayoutManager = new LinearLayoutManager(MainActivity.getInstance());
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         MainActivity.getInstance().runOnUiThread(new Runnable() {
@@ -254,40 +272,6 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                 timetableHintText.setText("校车时刻");
             }
         });
-    }
-
-    private void decodeTimetable(String result) {
-        if (result.length() == 0)
-            return;
-        List<Map<String, String>> timetableList = new ArrayList<>();
-        try {
-            JSONObject jsonObject = new JSONObject(result);
-            Iterator<?> it = jsonObject.keys();
-            while (it.hasNext()) {
-                String key = (String) it.next();
-                JSONArray jsonArray = jsonObject.getJSONArray(key);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject jsonobject = jsonArray.getJSONObject(i);
-                    String routeTitle = jsonobject.getString("routeTitle");
-                    String timeTitle = jsonobject.getString("timeTitle");
-                    String timeList = jsonobject.getString("timeList");
-                    Map<String, String> timetable = new HashMap<>();
-                    timetable.put("routeTitle", routeTitle);
-                    timetable.put("timeTitle", timeTitle);
-                    timetable.put("timeList", timeList);
-                    timetableList.add(timetable);
-                }
-            }
-            RecyclerView recyclerView = MainActivity.getInstance().findViewById(R.id.recycleView);
-            LinearLayoutManager linearLayoutManager = new LinearLayoutManager(MainActivity.getInstance());
-            linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-            recyclerView.setLayoutManager(linearLayoutManager);
-            recyclerView.setAdapter(new TimetableAdapter(timetableList));
-            timetableHintText.setText("校车时刻");
-        } catch (Exception e) {
-            timetableHintText.setText("校车时刻");
-            e.printStackTrace();
-        }
     }
 
     public OfoMenuManager ofoMenuManager;
@@ -360,7 +344,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
         }
     }
 
-    public void setUserViews(final boolean isLogin) {
+    void setUserViews(final boolean isLogin) {
         MainActivity.getInstance().runOnUiThread(new Runnable() {
             @Override
             public void run() {
