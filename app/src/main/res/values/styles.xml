@@ -9,10 +9,11 @@
     </style>
 
     <!--启动界面-->
-    <style name="WelcomeTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="android:windowBackground">@drawable/pic_welcome</item>
+    <style name="WelcomeTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/white</item>
+        <item name="colorPrimaryDark">@color/white</item>
+        <item name="colorAccent">@color/white</item>
+        <item name="android:windowBackground">@drawable/page_welcome</item>
     </style>
 
     <style name="DialogTheme" parent="Theme.AppCompat.Dialog">

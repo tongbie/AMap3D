@@ -86,7 +86,7 @@ public class AMapManager/* implements ScrollLayout.OnScrollLayoutStateChangeList
         myLocationStyle.showMyLocation(true);
         myLocationStyle.radiusFillColor(Color.parseColor("#00000000"));//定位精度圈透明
         myLocationStyle.strokeColor(Color.parseColor("#00000000"));//定位精度圈边缘透明
-        myLocationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_mylocation));
+        myLocationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.ic_my_location));
         aMap.setMyLocationStyle(myLocationStyle);
         aMap.getUiSettings().setMyLocationButtonEnabled(true);
         aMap.setMyLocationEnabled(true);
@@ -205,7 +205,7 @@ public class AMapManager/* implements ScrollLayout.OnScrollLayoutStateChangeList
                     .position(latLng)
                     .title(Datas.getBusInformationMap().get(key)[0])
                     .snippet(Datas.getBusInformationMap().get(key)[1]));
-            marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_bus_blue));
+            marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ic_bus_blue));
             Datas.getBusMarkerMap().put(key, marker);
         }
     }
@@ -214,7 +214,7 @@ public class AMapManager/* implements ScrollLayout.OnScrollLayoutStateChangeList
     public void moveMarker(LatLng[] latLngs, final String key) {
         //TODO：移动点是一个新的对象，不能添加信息
         final SmoothMoveMarker smoothMarker = new SmoothMoveMarker(aMap);
-        smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.icon_bus_moving));
+        smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.ic_bus_moving));
         smoothMarker.setPoints(Arrays.asList(latLngs));
         smoothMarker.setTotalDuration(3);
         smoothMarker.startSmoothMove();

@@ -67,7 +67,7 @@ public class PeopleManager {
                 Marker marker = AMapManager.aMap.addMarker(new MarkerOptions()
                         .position(latLng)
                         .title("ID" + peopleGson.getDeviceId()));
-                marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_people));
+                marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ic_people));
                 Datas.getPeopleMap().put(peopleGson.getDeviceId(), marker);
             }
         }
@@ -245,7 +245,7 @@ public class PeopleManager {
                     .position(latLng)
                     .snippet(Datas.getCurrentInfoWindowRemark())
                     .title("ID" + deviceId));
-            marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_people));
+            marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ic_people));
             if (isShowingInfoWindow) {
                 marker.showInfoWindow();
             }
@@ -281,7 +281,7 @@ public class PeopleManager {
                                 .position(latLng)
                                 .snippet(finalRemark)
                                 .title("ID" + deviceId));
-                        newMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_people));
+                        newMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ic_people));
                         Datas.getPeopleMap().put(deviceId, newMarker);
                         newMarker.showInfoWindow();
                     }

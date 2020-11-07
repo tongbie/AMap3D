@@ -87,7 +87,7 @@ public class DownloadService extends Service {
             intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);//避免重复打开activity
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
             builder.setSmallIcon(R.mipmap.ic_launcher);
-            builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.icon));
+            builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_icon_blue));
             builder.setContentIntent(pendingIntent);
             builder.setContentTitle("校车查询（更新下载中）");
             builder.setOngoing(true);
@@ -135,7 +135,7 @@ public class DownloadService extends Service {
     private void showFailNotifacation(String text) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId);
         builder.setSmallIcon(R.mipmap.ic_launcher);
-        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.icon));
+        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_icon_blue));
         builder.setContentTitle("下载失败");
         builder.setPriority(NotificationCompat.PRIORITY_HIGH);
         builder.setContentText(text);

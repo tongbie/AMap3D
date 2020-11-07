@@ -9,7 +9,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -39,12 +38,6 @@ import com.example.amap3d.views.ofoMenuView.MenuBrawable;
 import com.example.amap3d.views.ofoMenuView.OfoContentLayout;
 import com.example.amap3d.views.ofoMenuView.OfoMenuManager;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -211,10 +204,10 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
             case R.id.timetableHintText:
                 if (scrollLayout.isOpen()) {
                     scrollLayout.close();
-                    timetableImage.setImageResource(R.drawable.icon_timetable);
+                    timetableImage.setImageResource(R.drawable.ic_timetable);
                 } else {
                     scrollLayout.open();
-                    timetableImage.setImageResource(R.drawable.icon_map);
+                    timetableImage.setImageResource(R.drawable.ic_map);
                 }
                 break;
             case R.id.aMapButton:
@@ -301,7 +294,7 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
                 .addItemContentView(R.layout.ofo_item_logout)
                 .build();
         ((ViewGroup) mainActivity.findViewById(android.R.id.content)).addView(ofoMenuManager.getRootView());
-        ofoMenuManager.setUserIcon(R.drawable.icon_logout);
+        ofoMenuManager.setUserIcon(R.drawable.ic_logout);
         ofoMenuManager.setOnItemClickListener(new OfoContentLayout.OnItemClickListener() {
             @Override
             public void onClick(int position) {
@@ -349,12 +342,12 @@ public class ViewManager implements View.OnClickListener, ScrollLayout.OnScrollL
             @Override
             public void run() {
                 if (isLogin) {
-                    userImage.setImageResource(R.drawable.icon_login);
-                    ofoMenuManager.setUserIcon(R.drawable.icon_login);
+                    userImage.setImageResource(R.drawable.ic_login);
+                    ofoMenuManager.setUserIcon(R.drawable.ic_login);
                     userNameText.setText(Datas.getUserInfo().getDisplayName());
                 } else {
-                    userImage.setImageResource(R.drawable.icon_logout);
-                    ofoMenuManager.setUserIcon(R.drawable.icon_logout);
+                    userImage.setImageResource(R.drawable.ic_logout);
+                    ofoMenuManager.setUserIcon(R.drawable.ic_logout);
                     userNameText.setText("未登录");
                 }
             }

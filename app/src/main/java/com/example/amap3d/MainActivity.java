@@ -40,8 +40,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+//        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         activity = this;
-//        Utils.hideTitleBar(this);
+//        WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
+//        layoutParams.layoutAnimationParameters
+//        layoutParams.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER;
+
+
         setContentView(R.layout.activity_main);
         initView(savedInstanceState);
         if (isNetworkAvailable()) {

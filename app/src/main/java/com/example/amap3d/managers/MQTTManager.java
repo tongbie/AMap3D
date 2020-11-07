@@ -31,8 +31,8 @@ public class MQTTManager {
 
     public boolean isShowMoving = true;
 
-    private static class MQTTManagerFactory{
-        public static MQTTManager instance=new MQTTManager();
+    private static class MQTTManagerFactory {
+        public static MQTTManager instance = new MQTTManager();
     }
 
     public static MQTTManager getInstance() {
@@ -45,12 +45,18 @@ public class MQTTManager {
         mqttConnectOptions.setConnectionTimeout(10);//超时时间20s
         mqttConnectOptions.setKeepAliveInterval(120);//心跳时间，用以服务端判断客户端在线状态
 
-        deviceId = "35" + Build.BOARD.length() % 10 + Build.BRAND.length() % 10 +
-                Build.CPU_ABI.length() % 10 + Build.DEVICE.length() % 10 +
-                Build.DISPLAY.length() % 10 + Build.HOST.length() % 10 +
-                Build.ID.length() % 10 + Build.MANUFACTURER.length() % 10 +
-                Build.MODEL.length() % 10 + Build.PRODUCT.length() % 10 +
-                Build.TAGS.length() % 10 + Build.TYPE.length() % 10 +
+        deviceId = "35" + Build.BOARD.length() % 10 +
+                Build.BRAND.length() % 10 +
+                Build.CPU_ABI.length() % 10 +
+                Build.DEVICE.length() % 10 +
+                Build.DISPLAY.length() % 10 +
+                Build.HOST.length() % 10 +
+                Build.ID.length() % 10 +
+                Build.MANUFACTURER.length() % 10 +
+                Build.MODEL.length() % 10 +
+                Build.PRODUCT.length() % 10 +
+                Build.TAGS.length() % 10 +
+                Build.TYPE.length() % 10 +
                 Build.USER.length() % 10;
     }
 
@@ -79,7 +85,7 @@ public class MQTTManager {
                 subscribeTopic(Fields.MQTT_TOPIC_BUS_MOVE);
                 subscribeTopic(Fields.MQTT_TOPIC_UPLOAD_POSITION);
                 if (StorageManager.getSetting(Fields.SETTING_RECEIVE)) {
-                    subscribeTopic("BusMoveLis");
+                    subscribeTopic("BusMoveLis"); //订阅主题
                 }
             }
         } catch (SocketTimeoutException e) {
@@ -101,7 +107,8 @@ public class MQTTManager {
         }
     }
 
-    public void unSubscribeTopic(String topic){
+    /* 取消订阅 */
+    public void unSubscribeTopic(String topic) {
         if (mqttClient != null) {
             try {
                 mqttClient.unsubscribe(topic);
@@ -111,6 +118,7 @@ public class MQTTManager {
         }
     }
 
+    /* 推送消息 */
     public void publish(String topic, String msg, boolean isRetained) {
         try {
             int qos = 0;

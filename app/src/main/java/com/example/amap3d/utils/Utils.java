@@ -61,11 +61,6 @@ public class Utils {
         return flag;
     }
 
-    public static void hideTitleBar(Activity activity) {
-        activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        activity.requestWindowFeature(Window.FEATURE_NO_TITLE);
-    }
-
     public static int getScreenWidth(Context context) {
         return context.getResources().getDisplayMetrics().widthPixels;
     }

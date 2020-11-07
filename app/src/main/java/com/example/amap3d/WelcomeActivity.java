@@ -24,24 +24,24 @@ public class WelcomeActivity extends AppCompatActivity {
     }
 
     private void requestPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            List<String> permissionList = new ArrayList<>();
-            if (ContextCompat.checkSelfPermission(WelcomeActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                permissionList.add(Manifest.permission.ACCESS_FINE_LOCATION);
-            }
-            if (ContextCompat.checkSelfPermission(WelcomeActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            }
-            if (permissionList.isEmpty()) {
-                startActivity(new Intent(WelcomeActivity.this, MainActivity.class));
-                finish();
-            } else {
-                requestPermissions(permissionList.toArray(new String[permissionList.size()]), 0x000);
-            }
-        } else {
+        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {*/
+        List<String> permissionList = new ArrayList<>();
+        if (ContextCompat.checkSelfPermission(WelcomeActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+        if (ContextCompat.checkSelfPermission(WelcomeActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+        if (permissionList.isEmpty()) {
             startActivity(new Intent(WelcomeActivity.this, MainActivity.class));
             finish();
+        } else {
+            requestPermissions(permissionList.toArray(new String[permissionList.size()]), 0x000);
         }
+        /*} else {
+            startActivity(new Intent(WelcomeActivity.this, MainActivity.class));
+            finish();
+        }*/
     }
 
     @Override
@@ -58,7 +58,7 @@ public class WelcomeActivity extends AppCompatActivity {
                 if (isAllPermissionAgreed) {
                     startActivity(new Intent(WelcomeActivity.this, MainActivity.class));
                     finish();
-                }else {
+                } else {
                     Toast.makeText(WelcomeActivity.this, "未获得全部权限，无法使用该功能", Toast.LENGTH_SHORT).show();
                     finish();
                 }

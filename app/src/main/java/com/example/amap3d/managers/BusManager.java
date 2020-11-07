@@ -140,15 +140,22 @@ public class BusManager {
 
     public void moveBus(MqttMessage message) {
         try {
-            List<BusMoveGson> busMoveGsons = Utils.gson.fromJson(message.toString(), new TypeToken<List<BusMoveGson>>() {
+            List<BusMoveGson> busMoveGsons =
+                    Utils.gson.fromJson(message.toString(),
+                            new TypeToken<List<BusMoveGson>>() {
             }.getType());
             for (BusMoveGson busMoveGson : busMoveGsons) {
-                final Marker movingMarker = Datas.getBusMarkerMap().get(busMoveGson.getGPSDeviceIMEI());
-                final LatLng newLatLng = new LatLng(busMoveGson.getLat(), busMoveGson.getLng());
+                final Marker movingMarker =
+                        Datas.getBusMarkerMap().get(busMoveGson.getGPSDeviceIMEI());
+                final LatLng newLatLng =
+                        new LatLng(busMoveGson.getLat(), busMoveGson.getLng());
 
-                final SmoothMoveMarker smoothMarker = new SmoothMoveMarker(AMapManager.aMap);
-                smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.icon_bus_moving));
-                smoothMarker.setPoints(Arrays.asList(movingMarker.getPosition(), newLatLng));
+                final SmoothMoveMarker smoothMarker =
+                        new SmoothMoveMarker(AMapManager.aMap);
+                smoothMarker.setDescriptor(
+                        BitmapDescriptorFactory.fromResource(R.drawable.ic_bus_moving));
+                smoothMarker.setPoints(
+                        Arrays.asList(movingMarker.getPosition(), newLatLng));
                 smoothMarker.setTotalDuration(3);
                 movingMarker.setVisible(false);
                 smoothMarker.startSmoothMove();
@@ -159,7 +166,8 @@ public class BusManager {
                             smoothMarker.stopMove();
                             smoothMarker.removeMarker();
                             movingMarker.setPosition(newLatLng);
-                            movingMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_bus_red));
+                            movingMarker.setIcon(
+                                    BitmapDescriptorFactory.fromResource(R.drawable.ic_bus_red));
                             movingMarker.setVisible(true);
                         }
                     }
@@ -183,7 +191,7 @@ public class BusManager {
                 LatLng[] movePath = new LatLng[]{oldLatLng, newLatLng};
 
                 final SmoothMoveMarker smoothMarker = new SmoothMoveMarker(AMapManager.aMap);
-                smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.icon_bus_moving));
+                smoothMarker.setDescriptor(BitmapDescriptorFactory.fromResource(R.drawable.ic_bus_moving));
                 smoothMarker.setPoints(Arrays.asList(movePath));
                 smoothMarker.setTotalDuration(1);
                 movingMarker.setVisible(false);
@@ -196,7 +204,7 @@ public class BusManager {
                             smoothMarker.stopMove();
                             smoothMarker.removeMarker();
                             movingMarker.setPosition(newLatLng);
-                            movingMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.icon_bus_red));
+                            movingMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ic_bus_red));
                             movingMarker.setVisible(true);
                         }
                     }

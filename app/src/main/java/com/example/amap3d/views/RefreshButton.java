@@ -5,15 +5,11 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.Paint;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 
-import com.example.amap3d.MainActivity;
 import com.example.amap3d.R;
-import com.example.amap3d.utils.Utils;
 
 /**
  * Created by BieTong on 2018/3/19.
@@ -65,7 +61,7 @@ public class RefreshButton extends SelfButton {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.icon_refresh);
+        bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_refresh);
         float scale = ((float) buttonWidth) / bitmap.getWidth();
         matrix.setTranslate(0, 0);
         matrix.postScale(scale, scale);

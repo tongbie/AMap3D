@@ -15,7 +15,7 @@
         android:layout_marginTop="15dp"
         android:layout_marginRight="15dp"
         android:layout_marginBottom="15dp"
-        android:src="@drawable/icon_school_bus" />
+        android:src="@drawable/ic_school_bus" />
 
     <LinearLayout
         android:layout_width="match_parent"

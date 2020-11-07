@@ -12,7 +12,7 @@
         <ImageView
             android:layout_width="22dp"
             android:layout_height="22dp"
-            android:src="@drawable/ofo_icon_remark"/>
+            android:src="@drawable/ic_ofo_remark"/>
 
         <TextView
             android:layout_width="wrap_content"

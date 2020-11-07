@@ -40,7 +40,6 @@ public class NextBusView extends LinearLayout {
     private List<TodayTimetableGson> todayTimetableGsonList;
     private List<TodayTimetableGson> needShowTimetableItemList = new ArrayList<>();
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void init() {
         itemHeight = Utils.px(MainActivity.getInstance(), 45);
         this.setBackground(getResources().getDrawable(R.drawable.bg_shadow));
